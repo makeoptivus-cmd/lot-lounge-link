@@ -29,6 +29,7 @@ export interface SiteVisitData {
   distanceKm: string;
   visitDate: string;
   notes: string;
+  photos: string[];
   createdAt: string;
 }
 

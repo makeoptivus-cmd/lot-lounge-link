@@ -52,8 +52,8 @@ export default function LandOwnerForm() {
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="grid gap-5 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="areaName">Area Name</Label>
-              <Input id="areaName" placeholder="Enter area name" value={form.areaName} onChange={e => setForm(f => ({ ...f, areaName: e.target.value }))} required />
+              <Label htmlFor="areaName">Owner Name</Label>
+              <Input id="areaName" placeholder="Enter owner name" value={form.areaName} onChange={e => setForm(f => ({ ...f, areaName: e.target.value }))} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="age">Age</Label>
@@ -81,7 +81,7 @@ export default function LandOwnerForm() {
       <DataTable
         title="Saved Land Owners"
         columns={[
-          { key: "areaName", label: "Area" },
+          { key: "areaName", label: "Owner Name" },
           { key: "contactNumber", label: "Contact" },
           { key: "age", label: "Age" },
           { key: "address", label: "Address" },
