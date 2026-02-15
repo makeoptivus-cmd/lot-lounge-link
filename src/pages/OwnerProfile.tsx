@@ -178,7 +178,7 @@ export default function OwnerProfile() {
           {/* Stage 1: Owner Info */}
           <CollapsibleSection icon={Users} stage={1} title="Land Owner Details" count={1}>
             <div className="grid gap-x-8 gap-y-1 sm:grid-cols-2">
-              <DetailRow label="Area Name" value={selectedOwner.areaName} />
+              <DetailRow label="Owner Name" value={selectedOwner.areaName} />
               <DetailRow label="Contact" value={selectedOwner.contactNumber} />
               <DetailRow label="Age" value={selectedOwner.age} />
               <DetailRow label="Address" value={selectedOwner.address} />
