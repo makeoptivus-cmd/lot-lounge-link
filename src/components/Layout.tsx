@@ -1,13 +1,14 @@
 import { Link, useLocation } from "react-router-dom";
 import { 
   Users, MapPin, Eye, Handshake, Scale, UserCheck, 
-  Building, FileCheck, Home, Menu, X, Flower2 
+  Building, FileCheck, Home, Menu, X, Flower2, ClipboardList
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 const stages = [
+  { path: "/owner-profile", label: "Owner Profile", icon: ClipboardList, stage: 0 },
   { path: "/land-owner", label: "Land Owner", icon: Users, stage: 1 },
   { path: "/land-details", label: "Land Details", icon: MapPin, stage: 2 },
   { path: "/site-visit", label: "Site Visit", icon: Eye, stage: 3 },
@@ -19,6 +20,7 @@ const stages = [
 ];
 
 const stageColors: Record<number, string> = {
+  0: "bg-primary",
   1: "bg-[hsl(var(--stage-1))]",
   2: "bg-[hsl(var(--stage-2))]",
   3: "bg-[hsl(var(--stage-3))]",

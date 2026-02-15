@@ -13,6 +13,7 @@ import MediationForm from "./pages/MediationForm";
 import BuyerSellerMeetingForm from "./pages/BuyerSellerMeetingForm";
 import MeetingPlaceForm from "./pages/MeetingPlaceForm";
 import AdvanceRegistrationForm from "./pages/AdvanceRegistrationForm";
+import OwnerProfile from "./pages/OwnerProfile";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/owner-profile" element={<OwnerProfile />} />
           <Route path="/land-owner" element={<LandOwnerForm />} />
           <Route path="/land-details" element={<LandDetailsForm />} />
           <Route path="/site-visit" element={<SiteVisitForm />} />
