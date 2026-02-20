@@ -9,10 +9,12 @@ import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import FormPageHeader from "@/components/FormPageHeader";
 import DataTable from "@/components/DataTable";
+import MediaUpload from "@/components/MediaUpload";
 import { storage, LandOwnerData } from "@/lib/storage";
 
 export default function LandOwnerForm() {
   const [data, setData] = useState<LandOwnerData[]>(storage.getLandOwners());
+  const [selectedOwnerId, setSelectedOwnerId] = useState<string>("");
   const [form, setForm] = useState({
     areaName: "",
     address: "",
@@ -26,12 +28,15 @@ export default function LandOwnerForm() {
     const item: LandOwnerData = {
       ...form,
       id: crypto.randomUUID(),
+      photos: [],
+      videos: [],
       createdAt: new Date().toISOString(),
     };
     storage.addLandOwner(item);
     setData(storage.getLandOwners());
+    setSelectedOwnerId(item.id);
     setForm({ areaName: "", address: "", age: "", contactNumber: "", ownerBackground: "" });
-    toast.success("Land owner details saved!");
+    toast.success("Land owner details saved! Now you can upload photos and videos.");
   };
 
   const handleDelete = (id: string) => {
@@ -77,6 +82,17 @@ export default function LandOwnerForm() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Media Upload Section for Selected Owner */}
+      {selectedOwnerId && (
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">Add Photos & Videos for {data.find(o => o.id === selectedOwnerId)?.areaName}</h2>
+          <MediaUpload 
+            ownerId={selectedOwnerId} 
+            onMediaAdded={() => setData(storage.getLandOwners())}
+          />
+        </div>
+      )}
 
       <DataTable
         title="Saved Land Owners"

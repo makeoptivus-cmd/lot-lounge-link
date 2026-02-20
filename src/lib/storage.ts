@@ -7,8 +7,18 @@ export interface LandOwnerData {
   age: string;
   contactNumber: string;
   ownerBackground: string;
-  photo?: string;
+  photos: string[];
+  videos: string[];
   createdAt: string;
+}
+
+export interface MediaData {
+  id: string;
+  ownerId: string;
+  type: 'photo' | 'video';
+  data: string;
+  fileName: string;
+  uploadedAt: string;
 }
 
 export interface LandDetailsData {
@@ -20,6 +30,8 @@ export interface LandDetailsData {
   natureOfLand: string;
   ratePerCent: string;
   ratePerSqFt: string;
+  photos: string[];
+  videos: string[];
   createdAt: string;
 }
 
@@ -30,6 +42,7 @@ export interface SiteVisitData {
   visitDate: string;
   notes: string;
   photos: string[];
+  videos: string[];
   createdAt: string;
 }
 
@@ -40,6 +53,8 @@ export interface OwnerMeetingData {
   negotiationDetails: string;
   finalPrice: string;
   meetingDate: string;
+  photos: string[];
+  videos: string[];
   createdAt: string;
 }
 
@@ -50,6 +65,8 @@ export interface MediationData {
   mediationDate: string;
   mediationDetails: string;
   outcome: string;
+  photos: string[];
+  videos: string[];
   createdAt: string;
 }
 
@@ -60,6 +77,8 @@ export interface BuyerSellerMeetingData {
   buyerContact: string;
   meetingDate: string;
   meetingNotes: string;
+  photos: string[];
+  videos: string[];
   createdAt: string;
 }
 
@@ -70,6 +89,8 @@ export interface MeetingPlaceData {
   placeAddress: string;
   meetingDate: string;
   meetingTime: string;
+  photos: string[];
+  videos: string[];
   createdAt: string;
 }
 
@@ -81,6 +102,8 @@ export interface AdvanceRegistrationData {
   registrationDate: string;
   buyerName: string;
   notes: string;
+  photos: string[];
+  videos: string[];
   createdAt: string;
 }
 
@@ -93,6 +116,7 @@ const STORAGE_KEYS = {
   buyerSellerMeetings: 'success_re_buyer_seller_meetings',
   meetingPlaces: 'success_re_meeting_places',
   advanceRegistrations: 'success_re_advance_registrations',
+  media: 'success_re_media',
 };
 
 function getItems<T>(key: string): T[] {
@@ -101,13 +125,27 @@ function getItems<T>(key: string): T[] {
 }
 
 function setItems<T>(key: string, items: T[]): void {
-  localStorage.setItem(key, JSON.stringify(items));
+  try {
+    localStorage.setItem(key, JSON.stringify(items));
+  } catch (e) {
+    if (e instanceof Error && e.name === 'QuotaExceededError') {
+      throw new Error('Storage quota exceeded. Files are too large. Please reduce video/photo sizes.');
+    }
+    throw e;
+  }
 }
 
 function addItem<T>(key: string, item: T): void {
-  const items = getItems<T>(key);
-  items.push(item);
-  setItems(key, items);
+  try {
+    const items = getItems<T>(key);
+    items.push(item);
+    setItems(key, items);
+  } catch (e) {
+    if (e instanceof Error && e.name === 'QuotaExceededError') {
+      throw new Error('Storage quota exceeded. Files are too large. Please reduce video/photo sizes.');
+    }
+    throw e;
+  }
 }
 
 function deleteItem<T extends { id: string }>(key: string, id: string): void {
@@ -147,4 +185,11 @@ export const storage = {
   getAdvanceRegistrations: () => getItems<AdvanceRegistrationData>(STORAGE_KEYS.advanceRegistrations),
   addAdvanceRegistration: (item: AdvanceRegistrationData) => addItem(STORAGE_KEYS.advanceRegistrations, item),
   deleteAdvanceRegistration: (id: string) => deleteItem<AdvanceRegistrationData>(STORAGE_KEYS.advanceRegistrations, id),
+
+  getMediaByOwnerId: (ownerId: string) => {
+    const allMedia = getItems<MediaData>(STORAGE_KEYS.media);
+    return allMedia.filter(m => m.ownerId === ownerId);
+  },
+  addMedia: (item: MediaData) => addItem(STORAGE_KEYS.media, item),
+  deleteMedia: (id: string) => deleteItem<MediaData>(STORAGE_KEYS.media, id),
 };

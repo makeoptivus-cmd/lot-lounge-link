@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import FormPageHeader from "@/components/FormPageHeader";
 import DataTable from "@/components/DataTable";
+import SectionMediaUpload from "@/components/SectionMediaUpload";
 import { storage, AdvanceRegistrationData } from "@/lib/storage";
 
 export default function AdvanceRegistrationForm() {
@@ -22,18 +23,33 @@ export default function AdvanceRegistrationForm() {
     buyerName: "",
     notes: "",
   });
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [videos, setVideos] = useState<string[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const item: AdvanceRegistrationData = {
-      ...form,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-    };
-    storage.addAdvanceRegistration(item);
-    setData(storage.getAdvanceRegistrations());
-    setForm({ ownerId: "", advanceAmount: "", advanceDate: "", registrationDate: "", buyerName: "", notes: "" });
-    toast.success("Advance & registration saved!");
+    try {
+      const item: AdvanceRegistrationData = {
+        ...form,
+        photos,
+        videos,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+      };
+      storage.addAdvanceRegistration(item);
+      setData(storage.getAdvanceRegistrations());
+      setForm({ ownerId: "", advanceAmount: "", advanceDate: "", registrationDate: "", buyerName: "", notes: "" });
+      setPhotos([]);
+      setVideos([]);
+      toast.success("Advance registration details saved!");
+    } catch (error) {
+      console.error('Save error:', error);
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to save data. Files may be too large.");
+      }
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -61,6 +77,7 @@ export default function AdvanceRegistrationForm() {
                 value={form.ownerId}
                 onChange={e => setForm(f => ({ ...f, ownerId: e.target.value }))}
                 required
+                title="Select owner"
               >
                 <option value="">Choose owner…</option>
                 {owners.map(o => (
@@ -87,6 +104,15 @@ export default function AdvanceRegistrationForm() {
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="notes">Additional Notes</Label>
               <Textarea id="notes" placeholder="Payment mode, conditions, remarks…" rows={3} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+            </div>
+            <div className="sm:col-span-2">
+              <SectionMediaUpload
+                photos={photos}
+                videos={videos}
+                onPhotosChange={setPhotos}
+                onVideosChange={setVideos}
+                label="Attach Registration Documents & Photos"
+              />
             </div>
             <div className="sm:col-span-2">
               <Button type="submit" className="w-full sm:w-auto">Save Advance & Registration</Button>

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import FormPageHeader from "@/components/FormPageHeader";
 import DataTable from "@/components/DataTable";
+import SectionMediaUpload from "@/components/SectionMediaUpload";
 import { storage, MeetingPlaceData } from "@/lib/storage";
 
 export default function MeetingPlaceForm() {
@@ -20,18 +21,33 @@ export default function MeetingPlaceForm() {
     meetingDate: "",
     meetingTime: "",
   });
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [videos, setVideos] = useState<string[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const item: MeetingPlaceData = {
-      ...form,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-    };
-    storage.addMeetingPlace(item);
-    setData(storage.getMeetingPlaces());
-    setForm({ ownerId: "", placeName: "", placeAddress: "", meetingDate: "", meetingTime: "" });
-    toast.success("Meeting place saved!");
+    try {
+      const item: MeetingPlaceData = {
+        ...form,
+        photos,
+        videos,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+      };
+      storage.addMeetingPlace(item);
+      setData(storage.getMeetingPlaces());
+      setForm({ ownerId: "", placeName: "", placeAddress: "", meetingDate: "", meetingTime: "" });
+      setPhotos([]);
+      setVideos([]);
+      toast.success("Meeting place details saved!");
+    } catch (error) {
+      console.error('Save error:', error);
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to save data. Files may be too large.");
+      }
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -59,6 +75,7 @@ export default function MeetingPlaceForm() {
                 value={form.ownerId}
                 onChange={e => setForm(f => ({ ...f, ownerId: e.target.value }))}
                 required
+                title="Select owner"
               >
                 <option value="">Choose owner…</option>
                 {owners.map(o => (
@@ -81,6 +98,15 @@ export default function MeetingPlaceForm() {
             <div className="space-y-2">
               <Label htmlFor="time">Meeting Time</Label>
               <Input id="time" type="time" value={form.meetingTime} onChange={e => setForm(f => ({ ...f, meetingTime: e.target.value }))} required />
+            </div>
+            <div className="sm:col-span-2">
+              <SectionMediaUpload
+                photos={photos}
+                videos={videos}
+                onPhotosChange={setPhotos}
+                onVideosChange={setVideos}
+                label="Attach Venue Photos & Videos"
+              />
             </div>
             <div className="sm:col-span-2">
               <Button type="submit" className="w-full sm:w-auto">Save Meeting Place</Button>

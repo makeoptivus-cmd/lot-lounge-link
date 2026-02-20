@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import FormPageHeader from "@/components/FormPageHeader";
 import DataTable from "@/components/DataTable";
+import SectionMediaUpload from "@/components/SectionMediaUpload";
 import { storage, MediationData } from "@/lib/storage";
 
 export default function MediationForm() {
@@ -21,18 +22,33 @@ export default function MediationForm() {
     mediationDetails: "",
     outcome: "",
   });
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [videos, setVideos] = useState<string[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const item: MediationData = {
-      ...form,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-    };
-    storage.addMediation(item);
-    setData(storage.getMediations());
-    setForm({ ownerId: "", mediatorName: "", mediationDate: "", mediationDetails: "", outcome: "" });
-    toast.success("Mediation details saved!");
+    try {
+      const item: MediationData = {
+        ...form,
+        photos,
+        videos,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+      };
+      storage.addMediation(item);
+      setData(storage.getMediations());
+      setForm({ ownerId: "", mediatorName: "", mediationDate: "", mediationDetails: "", outcome: "" });
+      setPhotos([]);
+      setVideos([]);
+      toast.success("Mediation details saved!");
+    } catch (error) {
+      console.error('Save error:', error);
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to save data. Files may be too large.");
+      }
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -60,6 +76,7 @@ export default function MediationForm() {
                 value={form.ownerId}
                 onChange={e => setForm(f => ({ ...f, ownerId: e.target.value }))}
                 required
+                title="Select owner"
               >
                 <option value="">Choose owner…</option>
                 {owners.map(o => (
@@ -82,6 +99,15 @@ export default function MediationForm() {
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="details">Mediation Details</Label>
               <Textarea id="details" placeholder="Discussion points, agreements…" rows={4} value={form.mediationDetails} onChange={e => setForm(f => ({ ...f, mediationDetails: e.target.value }))} />
+            </div>
+            <div className="sm:col-span-2">
+              <SectionMediaUpload
+                photos={photos}
+                videos={videos}
+                onPhotosChange={setPhotos}
+                onVideosChange={setVideos}
+                label="Attach Mediation Photos & Videos"
+              />
             </div>
             <div className="sm:col-span-2">
               <Button type="submit" className="w-full sm:w-auto">Save Mediation</Button>

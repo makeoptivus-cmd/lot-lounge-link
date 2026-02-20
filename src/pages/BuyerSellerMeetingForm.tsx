@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import FormPageHeader from "@/components/FormPageHeader";
 import DataTable from "@/components/DataTable";
+import SectionMediaUpload from "@/components/SectionMediaUpload";
 import { storage, BuyerSellerMeetingData } from "@/lib/storage";
 
 export default function BuyerSellerMeetingForm() {
@@ -21,18 +22,33 @@ export default function BuyerSellerMeetingForm() {
     meetingDate: "",
     meetingNotes: "",
   });
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [videos, setVideos] = useState<string[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const item: BuyerSellerMeetingData = {
-      ...form,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-    };
-    storage.addBuyerSellerMeeting(item);
-    setData(storage.getBuyerSellerMeetings());
-    setForm({ ownerId: "", buyerName: "", buyerContact: "", meetingDate: "", meetingNotes: "" });
-    toast.success("Buyer-Seller meeting saved!");
+    try {
+      const item: BuyerSellerMeetingData = {
+        ...form,
+        photos,
+        videos,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+      };
+      storage.addBuyerSellerMeeting(item);
+      setData(storage.getBuyerSellerMeetings());
+      setForm({ ownerId: "", buyerName: "", buyerContact: "", meetingDate: "", meetingNotes: "" });
+      setPhotos([]);
+      setVideos([]);
+      toast.success("Buyer-seller meeting details saved!");
+    } catch (error) {
+      console.error('Save error:', error);
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to save data. Files may be too large.");
+      }
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -60,6 +76,7 @@ export default function BuyerSellerMeetingForm() {
                 value={form.ownerId}
                 onChange={e => setForm(f => ({ ...f, ownerId: e.target.value }))}
                 required
+                title="Select owner"
               >
                 <option value="">Choose owner…</option>
                 {owners.map(o => (
@@ -82,6 +99,15 @@ export default function BuyerSellerMeetingForm() {
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="notes">Meeting Notes</Label>
               <Textarea id="notes" placeholder="Discuss topics, agreements, observations…" rows={4} value={form.meetingNotes} onChange={e => setForm(f => ({ ...f, meetingNotes: e.target.value }))} />
+            </div>
+            <div className="sm:col-span-2">
+              <SectionMediaUpload
+                photos={photos}
+                videos={videos}
+                onPhotosChange={setPhotos}
+                onVideosChange={setVideos}
+                label="Attach Meeting Photos & Videos"
+              />
             </div>
             <div className="sm:col-span-2">
               <Button type="submit" className="w-full sm:w-auto">Save Meeting</Button>

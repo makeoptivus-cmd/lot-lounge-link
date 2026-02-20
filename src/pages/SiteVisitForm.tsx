@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { Eye, ImagePlus, X } from "lucide-react";
+import { useState } from "react";
+import { Eye } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,12 +9,12 @@ import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import FormPageHeader from "@/components/FormPageHeader";
 import DataTable from "@/components/DataTable";
+import SectionMediaUpload from "@/components/SectionMediaUpload";
 import { storage, SiteVisitData } from "@/lib/storage";
 
 export default function SiteVisitForm() {
   const [data, setData] = useState<SiteVisitData[]>(storage.getSiteVisits());
   const owners = storage.getLandOwners();
-  const fileRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     ownerId: "",
     distanceKm: "",
@@ -22,41 +22,32 @@ export default function SiteVisitForm() {
     notes: "",
   });
   const [photos, setPhotos] = useState<string[]>([]);
-
-  const handlePhotoAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    Array.from(files).forEach((file) => {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Photo must be under 5MB");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        setPhotos((prev) => [...prev, reader.result as string]);
-      };
-      reader.readAsDataURL(file);
-    });
-    if (fileRef.current) fileRef.current.value = "";
-  };
-
-  const removePhoto = (idx: number) => {
-    setPhotos((prev) => prev.filter((_, i) => i !== idx));
-  };
+  const [videos, setVideos] = useState<string[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const item: SiteVisitData = {
-      ...form,
-      photos,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-    };
-    storage.addSiteVisit(item);
-    setData(storage.getSiteVisits());
-    setForm({ ownerId: "", distanceKm: "", visitDate: "", notes: "" });
-    setPhotos([]);
-    toast.success("Site visit details saved!");
+    try {
+      const item: SiteVisitData = {
+        ...form,
+        photos,
+        videos,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+      };
+      storage.addSiteVisit(item);
+      setData(storage.getSiteVisits());
+      setForm({ ownerId: "", distanceKm: "", visitDate: "", notes: "" });
+      setPhotos([]);
+      setVideos([]);
+      toast.success("Site visit details saved!");
+    } catch (error) {
+      console.error('Save error:', error);
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to save data. Files may be too large.");
+      }
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -84,6 +75,7 @@ export default function SiteVisitForm() {
                 value={form.ownerId}
                 onChange={e => setForm(f => ({ ...f, ownerId: e.target.value }))}
                 required
+                title="Select owner"
               >
                 <option value="">Choose owner…</option>
                 {owners.map(o => (
@@ -104,38 +96,14 @@ export default function SiteVisitForm() {
               <Textarea id="notes" placeholder="Describe site conditions, observations…" rows={4} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
             </div>
 
-            {/* Photo Upload */}
-            <div className="space-y-2 sm:col-span-2">
-              <Label>Site Photos</Label>
-              <div className="flex flex-wrap gap-3">
-                {photos.map((src, i) => (
-                  <div key={i} className="relative h-24 w-24 rounded-lg border overflow-hidden group">
-                    <img src={src} alt={`Site photo ${i + 1}`} className="h-full w-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => removePhoto(i)}
-                      className="absolute top-1 right-1 rounded-full bg-destructive p-1 text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  className="flex h-24 w-24 flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
-                >
-                  <ImagePlus className="h-6 w-6 mb-1" />
-                  <span className="text-xs">Add Photo</span>
-                </button>
-              </div>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={handlePhotoAdd}
+            {/* Media Upload */}
+            <div className="sm:col-span-2">
+              <SectionMediaUpload
+                photos={photos}
+                videos={videos}
+                onPhotosChange={setPhotos}
+                onVideosChange={setVideos}
+                label="Site Photos & Videos"
               />
             </div>
 
