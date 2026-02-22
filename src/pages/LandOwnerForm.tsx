@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import FormPageHeader from "@/components/FormPageHeader";
-import DataTable from "@/components/DataTable";
+
 import MediaUpload from "@/components/MediaUpload";
 import { storage, LandOwnerData } from "@/lib/storage";
 
@@ -93,18 +93,6 @@ export default function LandOwnerForm() {
           />
         </div>
       )}
-
-      <DataTable
-        title="Saved Land Owners"
-        columns={[
-          { key: "areaName", label: "Owner Name" },
-          { key: "contactNumber", label: "Contact" },
-          { key: "age", label: "Age" },
-          { key: "address", label: "Address" },
-        ]}
-        data={data}
-        onDelete={handleDelete}
-      />
     </Layout>
   );
 }

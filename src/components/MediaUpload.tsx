@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Upload, X, Play, Image as ImageIcon, Trash2, HardDrive } from "lucide-react";
 import { toast } from "sonner";
 import { storage, MediaData } from "@/lib/storage";
-import { compressImageAdvanced, compressVideoAdvanced, formatSize, calculateSavings } from "@/lib/mediaCompressionAdvanced";
 
 interface MediaUploadProps {
   ownerId: string;
@@ -34,64 +33,66 @@ export default function MediaUpload({ ownerId, onMediaAdded }: MediaUploadProps)
           continue;
         }
 
-        // Check file size (max 500MB to attempt compression)
-        if (file.size > 500 * 1024 * 1024) {
-          toast.error(`${file.name} is too large (max 500MB)`);
+        // Check file size (max 150MB)
+        if (file.size > 150 * 1024 * 1024) {
+          toast.error(`${file.name} is too large (max 150MB)`);
           continue;
         }
 
         try {
-          let dataUrl: string;
-          let originalSize = file.size;
-          let compressedSize = file.size;
+          toast.loading(`Uploading ${file.name}...`);
+          const reader = new FileReader();
 
-          if (isImage) {
-            // Auto-compress images aggressively
-            toast.loading(`Compressing photo ${i + 1}/${files.length}...`);
-            const result = await compressImageAdvanced(file, 0.65);
-            dataUrl = result.dataUrl;
-            originalSize = result.originalSize;
-            compressedSize = result.compressedSize;
-            
-            const savings = calculateSavings(originalSize, compressedSize);
-            toast.dismiss();
-            toast.success(`Photo saved: ${formatSize(compressedSize)} (reduced ${savings.percentage.toFixed(0)}%)`);
-          } else {
-            // Auto-compress videos aggressively
-            toast.loading(`Processing video ${i + 1}/${files.length}...`);
-            const result = await compressVideoAdvanced(file, 10);
-            dataUrl = result.dataUrl;
-            originalSize = result.originalSize;
-            compressedSize = result.compressedSize;
-            
-            const savings = calculateSavings(originalSize, compressedSize);
-            toast.dismiss();
-            
-            if (savings.percentage > 90) {
-              toast.success(`Video optimized: ${formatSize(compressedSize)} (compressed ${savings.percentage.toFixed(0)}%)`);
-            } else if (savings.percentage > 50) {
-              toast.success(`Video saved: ${formatSize(compressedSize)} (reduced ${savings.percentage.toFixed(0)}%)`);
+          reader.onload = (e) => {
+            const dataUrl = e.target?.result as string;
+
+            if (isImage) {
+              const mediaData: MediaData = {
+                id: crypto.randomUUID(),
+                ownerId,
+                type: "photo",
+                data: dataUrl,
+                fileName: file.name,
+                uploadedAt: new Date().toISOString(),
+              };
+              try {
+                storage.addMedia(mediaData);
+                setMedia(storage.getMediaByOwnerId(ownerId));
+                onMediaAdded?.();
+                toast.dismiss();
+                toast.success(`Photo uploaded: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+              } catch (error) {
+                toast.dismiss();
+                toast.error(`Failed to save ${file.name}. Try deleting old media or refresh the page.`);
+              }
             } else {
-              toast.warning(`Video stored: ${formatSize(compressedSize)}`);
+              const mediaData: MediaData = {
+                id: crypto.randomUUID(),
+                ownerId,
+                type: "video",
+                data: dataUrl,
+                fileName: file.name,
+                uploadedAt: new Date().toISOString(),
+              };
+              try {
+                storage.addMedia(mediaData);
+                setMedia(storage.getMediaByOwnerId(ownerId));
+                onMediaAdded?.();
+                toast.dismiss();
+                toast.success(`Video uploaded: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+              } catch (error) {
+                toast.dismiss();
+                toast.error(`Failed to save ${file.name}. Try deleting old media or refresh the page.`);
+              }
             }
-          }
-
-          const mediaData: MediaData = {
-            id: crypto.randomUUID(),
-            ownerId,
-            type: isVideo ? "video" : "photo",
-            data: dataUrl,
-            fileName: file.name,
-            uploadedAt: new Date().toISOString(),
           };
 
-          try {
-            storage.addMedia(mediaData);
-            setMedia(storage.getMediaByOwnerId(ownerId));
-            onMediaAdded?.();
-          } catch (error) {
-            toast.error(`Failed to save ${file.name}. Try deleting old media or refresh the page.`);
-          }
+          reader.onerror = () => {
+            toast.dismiss();
+            toast.error(`Failed to read ${file.name}`);
+          };
+
+          reader.readAsDataURL(file);
         } catch (error) {
           toast.error(`Failed to process ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
           console.error('File processing error:', error);
@@ -165,7 +166,7 @@ export default function MediaUpload({ ownerId, onMediaAdded }: MediaUploadProps)
                   {uploading ? "Uploading..." : "Select Files"}
                 </Button>
                 <span className="text-xs text-muted-foreground">
-                  JPG, PNG, MP4, MOV, WebM (max 100MB each)
+                  JPG, PNG, MP4, MOV, WebM (max 150MB each, no compression)
                 </span>
               </div>
             </div>

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import FormPageHeader from "@/components/FormPageHeader";
-import DataTable from "@/components/DataTable";
+
 import SectionMediaUpload from "@/components/SectionMediaUpload";
 import { storage, LandDetailsData } from "@/lib/storage";
 
@@ -20,10 +20,12 @@ export default function LandDetailsForm() {
     areaName: "",
     fmSketch: "",
     siteSketch: "",
-    natureOfLand: "",
+    natureOfLand: [],
+    acres: "",
     ratePerCent: "",
     ratePerSqFt: "",
   });
+  const landTypeOptions = ["Agriculture", "Residential", "Commercial", "Nanjai", "Punjai"];
   const [photos, setPhotos] = useState<string[]>([]);
   const [videos, setVideos] = useState<string[]>([]);
 
@@ -39,7 +41,7 @@ export default function LandDetailsForm() {
       };
       storage.addLandDetails(item);
       setData(storage.getLandDetails());
-      setForm({ ownerId: "", areaName: "", fmSketch: "", siteSketch: "", natureOfLand: "", ratePerCent: "", ratePerSqFt: "" });
+      setForm({ ownerId: "", areaName: "", fmSketch: "", siteSketch: "", natureOfLand: [], acres: "", ratePerCent: "", ratePerSqFt: "" });
       setPhotos([]);
       setVideos([]);
       toast.success("Land details saved!");
@@ -99,8 +101,31 @@ export default function LandDetailsForm() {
               <Textarea id="site" placeholder="Site sketch description" value={form.siteSketch} onChange={e => setForm(f => ({ ...f, siteSketch: e.target.value }))} />
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="nature">Nature of the Land</Label>
-              <Input id="nature" placeholder="Agriculture, residential, commercial…" value={form.natureOfLand} onChange={e => setForm(f => ({ ...f, natureOfLand: e.target.value }))} required />
+              <Label>Nature of the Land</Label>
+              <div className="grid grid-cols-2 gap-4 p-3 border border-input rounded-md bg-background">
+                {landTypeOptions.map(option => (
+                  <label key={option} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.natureOfLand.includes(option)}
+                      onChange={e => {
+                        if (e.target.checked) {
+                          setForm(f => ({ ...f, natureOfLand: [...f.natureOfLand, option] }));
+                        } else {
+                          setForm(f => ({ ...f, natureOfLand: f.natureOfLand.filter(n => n !== option) }));
+                        }
+                      }}
+                      className="rounded border border-input h-4 w-4"
+                      aria-label={option}
+                    />
+                    <span className="text-sm font-normal">{option}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="acres">Acres</Label>
+              <Input id="acres" type="number" placeholder="Enter acres" step="0.01" value={form.acres} onChange={e => setForm(f => ({ ...f, acres: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="cent">Rate per Cent (₹)</Label>
@@ -125,18 +150,6 @@ export default function LandDetailsForm() {
           </form>
         </CardContent>
       </Card>
-
-      <DataTable
-        title="Saved Land Details"
-        columns={[
-          { key: "areaName", label: "Area" },
-          { key: "natureOfLand", label: "Nature" },
-          { key: "ratePerCent", label: "₹/Cent" },
-          { key: "ratePerSqFt", label: "₹/Sq.Ft" },
-        ]}
-        data={data}
-        onDelete={handleDelete}
-      />
     </Layout>
   );
 }

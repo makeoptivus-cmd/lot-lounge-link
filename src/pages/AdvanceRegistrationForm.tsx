@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import FormPageHeader from "@/components/FormPageHeader";
-import DataTable from "@/components/DataTable";
+
 import SectionMediaUpload from "@/components/SectionMediaUpload";
 import { storage, AdvanceRegistrationData } from "@/lib/storage";
 
@@ -120,18 +120,6 @@ export default function AdvanceRegistrationForm() {
           </form>
         </CardContent>
       </Card>
-
-      <DataTable
-        title="Saved Records"
-        columns={[
-          { key: "buyerName", label: "Buyer" },
-          { key: "advanceAmount", label: "Amount (₹)" },
-          { key: "advanceDate", label: "Advance Date" },
-          { key: "registrationDate", label: "Reg. Date" },
-        ]}
-        data={data}
-        onDelete={handleDelete}
-      />
     </Layout>
   );
 }

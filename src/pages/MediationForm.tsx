@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import FormPageHeader from "@/components/FormPageHeader";
-import DataTable from "@/components/DataTable";
+
 import SectionMediaUpload from "@/components/SectionMediaUpload";
 import { storage, MediationData } from "@/lib/storage";
 
@@ -115,18 +115,6 @@ export default function MediationForm() {
           </form>
         </CardContent>
       </Card>
-
-      <DataTable
-        title="Saved Mediations"
-        columns={[
-          { key: "mediatorName", label: "Mediator" },
-          { key: "mediationDate", label: "Date" },
-          { key: "outcome", label: "Outcome" },
-          { key: "mediationDetails", label: "Details" },
-        ]}
-        data={data}
-        onDelete={handleDelete}
-      />
     </Layout>
   );
 }

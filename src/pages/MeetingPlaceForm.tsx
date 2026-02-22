@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import FormPageHeader from "@/components/FormPageHeader";
-import DataTable from "@/components/DataTable";
+
 import SectionMediaUpload from "@/components/SectionMediaUpload";
 import { storage, MeetingPlaceData } from "@/lib/storage";
 
@@ -114,18 +114,6 @@ export default function MeetingPlaceForm() {
           </form>
         </CardContent>
       </Card>
-
-      <DataTable
-        title="Saved Meeting Places"
-        columns={[
-          { key: "placeName", label: "Place" },
-          { key: "placeAddress", label: "Address" },
-          { key: "meetingDate", label: "Date" },
-          { key: "meetingTime", label: "Time" },
-        ]}
-        data={data}
-        onDelete={handleDelete}
-      />
     </Layout>
   );
 }

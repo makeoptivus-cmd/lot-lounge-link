@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import FormPageHeader from "@/components/FormPageHeader";
-import DataTable from "@/components/DataTable";
+
 import SectionMediaUpload from "@/components/SectionMediaUpload";
 import { storage, BuyerSellerMeetingData } from "@/lib/storage";
 
@@ -19,6 +19,7 @@ export default function BuyerSellerMeetingForm() {
     ownerId: "",
     buyerName: "",
     buyerContact: "",
+    buyerAddress: "",
     meetingDate: "",
     meetingNotes: "",
   });
@@ -37,7 +38,7 @@ export default function BuyerSellerMeetingForm() {
       };
       storage.addBuyerSellerMeeting(item);
       setData(storage.getBuyerSellerMeetings());
-      setForm({ ownerId: "", buyerName: "", buyerContact: "", meetingDate: "", meetingNotes: "" });
+      setForm({ ownerId: "", buyerName: "", buyerContact: "", buyerAddress: "", meetingDate: "", meetingNotes: "" });
       setPhotos([]);
       setVideos([]);
       toast.success("Buyer-seller meeting details saved!");
@@ -92,6 +93,10 @@ export default function BuyerSellerMeetingForm() {
               <Label htmlFor="bcontact">Buyer Contact</Label>
               <Input id="bcontact" type="tel" placeholder="Buyer's phone" value={form.buyerContact} onChange={e => setForm(f => ({ ...f, buyerContact: e.target.value }))} required />
             </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="baddress">Buyer Address</Label>
+              <Input id="baddress" placeholder="Buyer's address" value={form.buyerAddress} onChange={e => setForm(f => ({ ...f, buyerAddress: e.target.value }))} />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="date">Meeting Date</Label>
               <Input id="date" type="date" value={form.meetingDate} onChange={e => setForm(f => ({ ...f, meetingDate: e.target.value }))} required />
@@ -115,18 +120,6 @@ export default function BuyerSellerMeetingForm() {
           </form>
         </CardContent>
       </Card>
-
-      <DataTable
-        title="Saved Buyer-Seller Meetings"
-        columns={[
-          { key: "buyerName", label: "Buyer" },
-          { key: "buyerContact", label: "Contact" },
-          { key: "meetingDate", label: "Date" },
-          { key: "meetingNotes", label: "Notes" },
-        ]}
-        data={data}
-        onDelete={handleDelete}
-      />
     </Layout>
   );
 }

@@ -335,6 +335,17 @@ export default function OwnerProfile() {
   const [owners, setOwners] = useState(storage.getLandOwners());
   const [selectedOwnerId, setSelectedOwnerId] = useState("");
   const [search, setSearch] = useState("");
+  const [showDownloadDialog, setShowDownloadDialog] = useState(false);
+  const [selectedSections, setSelectedSections] = useState({
+    owner: true,
+    land: true,
+    site: true,
+    meeting: true,
+    mediation: true,
+    buyer: true,
+    place: true,
+    advance: true,
+  });
 
   const filteredOwners = useMemo(() => {
     if (!search.trim()) return owners;
@@ -414,14 +425,7 @@ export default function OwnerProfile() {
           {selectedOwnerId && selectedOwner && (
             <div className="flex gap-2 mt-4 flex-wrap">
               <Button
-                onClick={async () => {
-                  try {
-                    await generateOwnerProfilePDF(selectedOwnerId);
-                    toast.success("PDF downloaded successfully");
-                  } catch (err) {
-                    toast.error("Failed to generate PDF: " + (err instanceof Error ? err.message : "Unknown error"));
-                  }
-                }}
+                onClick={() => setShowDownloadDialog(true)}
                 variant="outline"
                 className="gap-2"
               >
@@ -430,6 +434,107 @@ export default function OwnerProfile() {
               </Button>
             </div>
           )}
+
+          {/* Download Options Dialog */}
+          <Dialog open={showDownloadDialog} onOpenChange={setShowDownloadDialog}>
+            <DialogContent className="max-w-md">
+              <div className="space-y-4">
+                <div>
+                  <h2 className="font-semibold text-lg mb-2">Download Report</h2>
+                  <p className="text-sm text-muted-foreground mb-4">Select which sections to include in your PDF report:</p>
+                </div>
+
+                <div className="space-y-3 max-h-64 overflow-y-auto border rounded-lg p-3">
+                  {sectionConfig.map((section) => (
+                    <label key={section.key} className="flex items-center gap-3 cursor-pointer hover:bg-muted p-2 rounded">
+                      <input
+                        type="checkbox"
+                        checked={selectedSections[section.key as keyof typeof selectedSections]}
+                        onChange={(e) =>
+                          setSelectedSections((prev) => ({
+                            ...prev,
+                            [section.key]: e.target.checked,
+                          }))
+                        }
+                        className="h-4 w-4 rounded border border-input"
+                      />
+                      <div className="flex items-center gap-2">
+                        <section.icon className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{section.label}</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    onClick={async () => {
+                      try {
+                        // Select all sections
+                        const allSections = {
+                          owner: true,
+                          land: true,
+                          site: true,
+                          meeting: true,
+                          mediation: true,
+                          buyer: true,
+                          place: true,
+                          advance: true,
+                        };
+                        await generateOwnerProfilePDF(selectedOwnerId, {
+                          includeOwner: allSections.owner,
+                          includeLandDetails: allSections.land,
+                          includeSiteVisit: allSections.site,
+                          includeOwnerMeeting: allSections.meeting,
+                          includeMediation: allSections.mediation,
+                          includeBuyerSellerMeeting: allSections.buyer,
+                          includeMeetingPlace: allSections.place,
+                          includeAdvanceRegistration: allSections.advance,
+                        });
+                        toast.success("PDF downloaded successfully");
+                        setShowDownloadDialog(false);
+                      } catch (err) {
+                        toast.error("Failed to generate PDF: " + (err instanceof Error ? err.message : "Unknown error"));
+                      }
+                    }}
+                    className="flex-1"
+                  >
+                    Download All
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      try {
+                        await generateOwnerProfilePDF(selectedOwnerId, {
+                          includeOwner: selectedSections.owner,
+                          includeLandDetails: selectedSections.land,
+                          includeSiteVisit: selectedSections.site,
+                          includeOwnerMeeting: selectedSections.meeting,
+                          includeMediation: selectedSections.mediation,
+                          includeBuyerSellerMeeting: selectedSections.buyer,
+                          includeMeetingPlace: selectedSections.place,
+                          includeAdvanceRegistration: selectedSections.advance,
+                        });
+                        toast.success("PDF downloaded successfully");
+                        setShowDownloadDialog(false);
+                      } catch (err) {
+                        toast.error("Failed to generate PDF: " + (err instanceof Error ? err.message : "Unknown error"));
+                      }
+                    }}
+                    className="flex-1"
+                    variant="default"
+                  >
+                    Download Selected
+                  </Button>
+                </div>
+
+                <DialogClose asChild>
+                  <Button variant="outline" className="w-full">
+                    Cancel
+                  </Button>
+                </DialogClose>
+              </div>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
 

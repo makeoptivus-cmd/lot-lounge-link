@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import FormPageHeader from "@/components/FormPageHeader";
-import DataTable from "@/components/DataTable";
+
 import SectionMediaUpload from "@/components/SectionMediaUpload";
 import { storage, SiteVisitData } from "@/lib/storage";
 
@@ -113,18 +113,6 @@ export default function SiteVisitForm() {
           </form>
         </CardContent>
       </Card>
-
-      <DataTable
-        title="Saved Site Visits"
-        columns={[
-          { key: "distanceKm", label: "Distance (KM)" },
-          { key: "visitDate", label: "Visit Date" },
-          { key: "notes", label: "Notes" },
-          { key: "photoCount", label: "Photos" },
-        ]}
-        data={data.map(d => ({ ...d, photoCount: `${(d.photos || []).length} photo(s)` }))}
-        onDelete={handleDelete}
-      />
     </Layout>
   );
 }

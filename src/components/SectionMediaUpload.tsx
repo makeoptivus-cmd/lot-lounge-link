@@ -2,9 +2,8 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, X, Play, Image as ImageIcon, Trash2, CheckCircle, HardDrive, Zap } from "lucide-react";
+import { Upload, X, Play, Image as ImageIcon, Trash2, CheckCircle, HardDrive } from "lucide-react";
 import { toast } from "sonner";
-import { compressImageAdvanced, compressVideoAdvanced, formatSize, calculateSavings } from "@/lib/mediaCompressionAdvanced";
 
 interface SectionMediaUploadProps {
   photos: string[];
@@ -42,51 +41,36 @@ export default function SectionMediaUpload({
           continue;
         }
 
-        // Check file size (max 500MB for upload attempt)
-        if (file.size > 500 * 1024 * 1024) {
-          toast.error(`${file.name} is too large (max 500MB)`);
+        // Check file size (max 150MB)
+        if (file.size > 150 * 1024 * 1024) {
+          toast.error(`${file.name} is too large (max 150MB)`);
           continue;
         }
 
         try {
-          let dataUrl: string;
-          let originalSize = file.size;
-          let compressedSize = file.size;
+          toast.loading(`Uploading ${file.name}...`);
+          const reader = new FileReader();
 
-          if (isImage) {
-            // Auto-compress images aggressively
-            toast.loading(`Compressing photo ${i + 1}/${files.length}...`);
-            const result = await compressImageAdvanced(file, 0.65);
-            dataUrl = result.dataUrl;
-            originalSize = result.originalSize;
-            compressedSize = result.compressedSize;
-            
-            const savings = calculateSavings(originalSize, compressedSize);
-            toast.dismiss();
-            toast.success(`Photo saved: ${formatSize(compressedSize)} (reduced ${savings.percentage.toFixed(0)}%)`);
-            
-            onPhotosChange([...photos, dataUrl]);
-          } else {
-            // Auto-compress videos aggressively
-            toast.loading(`Processing video ${i + 1}/${files.length}...`);
-            const result = await compressVideoAdvanced(file, 10);
-            dataUrl = result.dataUrl;
-            originalSize = result.originalSize;
-            compressedSize = result.compressedSize;
-            
-            const savings = calculateSavings(originalSize, compressedSize);
-            toast.dismiss();
-            
-            if (savings.percentage > 90) {
-              toast.success(`Video optimized: ${formatSize(compressedSize)} (compressed ${savings.percentage.toFixed(0)}%)`);
-            } else if (savings.percentage > 50) {
-              toast.success(`Video saved: ${formatSize(compressedSize)} (reduced ${savings.percentage.toFixed(0)}%)`);
+          reader.onload = (e) => {
+            const dataUrl = e.target?.result as string;
+
+            if (isImage) {
+              toast.dismiss();
+              toast.success(`Photo uploaded: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+              onPhotosChange([...photos, dataUrl]);
             } else {
-              toast.warning(`Video stored: ${formatSize(compressedSize)}`);
+              toast.dismiss();
+              toast.success(`Video uploaded: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+              onVideosChange([...videos, dataUrl]);
             }
-            
-            onVideosChange([...videos, dataUrl]);
-          }
+          };
+
+          reader.onerror = () => {
+            toast.dismiss();
+            toast.error(`Failed to read ${file.name}`);
+          };
+
+          reader.readAsDataURL(file);
         } catch (error) {
           toast.error(`Failed to process ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
           console.error('File processing error:', error);
@@ -194,12 +178,12 @@ export default function SectionMediaUpload({
                 <div className="flex items-start gap-2">
                   <HardDrive className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-semibold text-blue-900">🔄 Auto-Compression Active</p>
+                    <p className="font-semibold text-blue-900">� Full Quality Storage</p>
                     <p className="text-blue-700 text-xs mt-1">
-                      ✅ Photos: Automatically compressed to 60% quality, max 800px
+                      ✅ Photos: Stored in full quality, up to 150MB each
                     </p>
                     <p className="text-blue-700 text-xs">
-                      ✅ Videos: Extracted as optimized previews (80%+ size reduction)
+                      ✅ Videos: Stored without compression, up to 150MB each
                     </p>
                   </div>
                 </div>
@@ -207,14 +191,14 @@ export default function SectionMediaUpload({
 
               <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm">
                 <div className="flex items-start gap-2">
-                  <Zap className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                  <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-semibold text-green-900">✨ Storage Tips</p>
+                    <p className="font-semibold text-green-900">✨ High Quality Files</p>
                     <ul className="text-green-700 text-xs mt-1 space-y-1">
-                      <li>✓ All files automatically compressed on upload</li>
-                      <li>✓ No manual compression needed!</li>
-                      <li>✓ Photos saved: ~200-400KB each after compression</li>
-                      <li>✓ Videos saved as optimized previews</li>
+                      <li>✓ No compression applied</li>
+                      <li>✓ Original quality preserved</li>
+                      <li>✓ Maximum file size: 150MB each</li>
+                      <li>✓ Videos play without quality loss</li>
                     </ul>
                   </div>
                 </div>
@@ -256,9 +240,9 @@ export default function SectionMediaUpload({
                     📦 Photos: {photos.length} | 🎥 Videos: {videos.length}
                   </span>
                 </div>
-                <div className={`text-xs font-medium ${parseFloat(getTotalSizeMB()) > 7 ? 'text-orange-600' : 'text-green-600'}`}>
-                  💾 Compressed Total: {getTotalSizeMB()} MB
-                  {parseFloat(getTotalSizeMB()) > 7 && ' ⚠️ Getting large - delete old media if save fails'}
+                <div className={`text-xs font-medium ${parseFloat(getTotalSizeMB()) > 140 ? 'text-orange-600' : 'text-green-600'}`}>
+                  📦 Total Size: {getTotalSizeMB()} MB
+                  {parseFloat(getTotalSizeMB()) > 140 && ' ⚠️ Approaching upload limit - consider removing old media'}
                 </div>
               </div>
             </div>

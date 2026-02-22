@@ -6,6 +6,15 @@ export interface PDFExportOptions {
   includePhotos?: boolean;
   includeVideos?: boolean;
   pageSize?: 'A4' | 'Letter';
+  // Section includes
+  includeOwner?: boolean;
+  includeLandDetails?: boolean;
+  includeSiteVisit?: boolean;
+  includeOwnerMeeting?: boolean;
+  includeMediation?: boolean;
+  includeBuyerSellerMeeting?: boolean;
+  includeMeetingPlace?: boolean;
+  includeAdvanceRegistration?: boolean;
 }
 
 export async function generateOwnerProfilePDF(
@@ -15,6 +24,14 @@ export async function generateOwnerProfilePDF(
   const {
     includePhotos = true,
     includeVideos = true,
+    includeOwner = true,
+    includeLandDetails = true,
+    includeSiteVisit = true,
+    includeOwnerMeeting = true,
+    includeMediation = true,
+    includeBuyerSellerMeeting = true,
+    includeMeetingPlace = true,
+    includeAdvanceRegistration = true,
   } = options;
 
   // Get owner data
@@ -92,6 +109,32 @@ export async function generateOwnerProfilePDF(
           font-size: 14px;
           word-wrap: break-word;
         }
+        .photo-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 15px;
+          margin: 15px 0;
+          page-break-inside: avoid;
+        }
+        .photo-item {
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+        .photo-item img {
+          width: 100%;
+          height: auto;
+          max-height: 300px;
+          object-fit: contain;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          display: block;
+        }
+        .photo-label {
+          font-weight: bold;
+          margin-bottom: 10px;
+          color: #667eea;
+          font-size: 12px;
+        }
         .footer {
           margin-top: 40px;
           padding-top: 20px;
@@ -117,7 +160,7 @@ export async function generateOwnerProfilePDF(
         <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
       </div>
 
-      ${landDetails.length > 0 ? `
+      ${includeLandDetails && landDetails.length > 0 ? `
       <div class="section">
         <h2>Stage 2: Land Details</h2>
         ${landDetails.map(land => `
@@ -129,23 +172,35 @@ export async function generateOwnerProfilePDF(
               </div>
               <div class="detail-item">
                 <div class="detail-label">Nature of Land</div>
-                <div class="detail-value">${land.natureOfLand}</div>
+                <div class="detail-value">${Array.isArray(land.natureOfLand) ? land.natureOfLand.join(', ') : land.natureOfLand}</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Acres</div>
+                <div class="detail-value">${land.acres || 'N/A'}</div>
               </div>
               <div class="detail-item">
                 <div class="detail-label">Rate per Cent (₹)</div>
                 <div class="detail-value">${land.ratePerCent}</div>
               </div>
-              <div class="detail-item">
-                <div class="detail-label">Rate per Sq.Ft (₹)</div>
-                <div class="detail-value">${land.ratePerSqFt}</div>
-              </div>
             </div>
+            ${land.photos && land.photos.length > 0 ? `
+              <div style="margin-top: 15px;">
+                <div class="photo-label">📸 Land Photos (${land.photos.length})</div>
+                <div class="photo-grid">
+                  ${land.photos.map((photo, idx) => `
+                    <div class="photo-item">
+                      <img src="${photo}" alt="Land Photo ${idx + 1}" />
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
           </div>
         `).join('')}
       </div>
       ` : ''}
 
-      ${siteVisits.length > 0 ? `
+      ${includeSiteVisit && siteVisits.length > 0 ? `
       <div class="section">
         <h2>Stage 3: Site Visit</h2>
         ${siteVisits.map(visit => `
@@ -161,12 +216,24 @@ export async function generateOwnerProfilePDF(
               </div>
             </div>
             ${visit.notes ? `<p><strong>Notes:</strong> ${visit.notes}</p>` : ''}
+            ${visit.photos && visit.photos.length > 0 ? `
+              <div style="margin-top: 15px;">
+                <div class="photo-label">📸 Site Photos (${visit.photos.length})</div>
+                <div class="photo-grid">
+                  ${visit.photos.map((photo, idx) => `
+                    <div class="photo-item">
+                      <img src="${photo}" alt="Site Photo ${idx + 1}" />
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
           </div>
         `).join('')}
       </div>
       ` : ''}
 
-      ${ownerMeetings.length > 0 ? `
+      ${includeOwnerMeeting && ownerMeetings.length > 0 ? `
       <div class="section">
         <h2>Stage 4: Owner Meeting</h2>
         ${ownerMeetings.map(meeting => `
@@ -189,12 +256,24 @@ export async function generateOwnerProfilePDF(
                 <div class="detail-value">${meeting.negotiationDetails}</div>
               </div>
             </div>
+            ${meeting.photos && meeting.photos.length > 0 ? `
+              <div style="margin-top: 15px;">
+                <div class="photo-label">📸 Meeting Photos (${meeting.photos.length})</div>
+                <div class="photo-grid">
+                  ${meeting.photos.map((photo, idx) => `
+                    <div class="photo-item">
+                      <img src="${photo}" alt="Meeting Photo ${idx + 1}" />
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
           </div>
         `).join('')}
       </div>
       ` : ''}
 
-      ${mediations.length > 0 ? `
+      ${includeMediation && mediations.length > 0 ? `
       <div class="section">
         <h2>Stage 5: Mediation</h2>
         ${mediations.map(mediation => `
@@ -217,12 +296,24 @@ export async function generateOwnerProfilePDF(
                 <div class="detail-value">${mediation.mediationDetails}</div>
               </div>
             </div>
+            ${mediation.photos && mediation.photos.length > 0 ? `
+              <div style="margin-top: 15px;">
+                <div class="photo-label">📸 Mediation Photos (${mediation.photos.length})</div>
+                <div class="photo-grid">
+                  ${mediation.photos.map((photo, idx) => `
+                    <div class="photo-item">
+                      <img src="${photo}" alt="Mediation Photo ${idx + 1}" />
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
           </div>
         `).join('')}
       </div>
       ` : ''}
 
-      ${buyerSellerMeetings.length > 0 ? `
+      ${includeBuyerSellerMeeting && buyerSellerMeetings.length > 0 ? `
       <div class="section">
         <h2>Stage 6: Buyer-Seller Meeting</h2>
         ${buyerSellerMeetings.map(meeting => `
@@ -237,20 +328,33 @@ export async function generateOwnerProfilePDF(
                 <div class="detail-value">${meeting.buyerContact}</div>
               </div>
               <div class="detail-item">
+                <div class="detail-label">Address</div>
+                <div class="detail-value">${meeting.buyerAddress || 'N/A'}</div>
+              </div>
+              <div class="detail-item">
                 <div class="detail-label">Date</div>
                 <div class="detail-value">${meeting.meetingDate}</div>
               </div>
-              <div class="detail-item">
-                <div class="detail-label">Notes</div>
-                <div class="detail-value">${meeting.meetingNotes}</div>
-              </div>
             </div>
+            ${meeting.meetingNotes ? `<p><strong>Notes:</strong> ${meeting.meetingNotes}</p>` : ''}
+            ${meeting.photos && meeting.photos.length > 0 ? `
+              <div style="margin-top: 15px;">
+                <div class="photo-label">📸 Buyer Meeting Photos (${meeting.photos.length})</div>
+                <div class="photo-grid">
+                  ${meeting.photos.map((photo, idx) => `
+                    <div class="photo-item">
+                      <img src="${photo}" alt="Buyer Meeting Photo ${idx + 1}" />
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
           </div>
         `).join('')}
       </div>
       ` : ''}
 
-      ${meetingPlaces.length > 0 ? `
+      ${includeMeetingPlace && meetingPlaces.length > 0 ? `
       <div class="section">
         <h2>Stage 7: Meeting Place</h2>
         ${meetingPlaces.map(place => `
@@ -273,12 +377,24 @@ export async function generateOwnerProfilePDF(
                 <div class="detail-value">${place.meetingTime}</div>
               </div>
             </div>
+            ${place.photos && place.photos.length > 0 ? `
+              <div style="margin-top: 15px;">
+                <div class="photo-label">📸 Venue Photos (${place.photos.length})</div>
+                <div class="photo-grid">
+                  ${place.photos.map((photo, idx) => `
+                    <div class="photo-item">
+                      <img src="${photo}" alt="Venue Photo ${idx + 1}" />
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
           </div>
         `).join('')}
       </div>
       ` : ''}
 
-      ${advanceRegistrations.length > 0 ? `
+      ${includeAdvanceRegistration && advanceRegistrations.length > 0 ? `
       <div class="section">
         <h2>Stage 8: Advance & Registration</h2>
         ${advanceRegistrations.map(adv => `
@@ -302,6 +418,18 @@ export async function generateOwnerProfilePDF(
               </div>
             </div>
             ${adv.notes ? `<p><strong>Notes:</strong> ${adv.notes}</p>` : ''}
+            ${adv.photos && adv.photos.length > 0 ? `
+              <div style="margin-top: 15px;">
+                <div class="photo-label">📸 Documents & Photos (${adv.photos.length})</div>
+                <div class="photo-grid">
+                  ${adv.photos.map((photo, idx) => `
+                    <div class="photo-item">
+                      <img src="${photo}" alt="Document Photo ${idx + 1}" />
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
           </div>
         `).join('')}
       </div>
@@ -310,7 +438,7 @@ export async function generateOwnerProfilePDF(
       <div class="footer">
         <p>This report was auto-generated by Lot Lounge Link</p>
         <p>For official records, please refer to original documents</p>
-        <p margin-top:10px">© 2026 Lot Lounge Link. All rights reserved.</p>
+        <p>© 2026 Lot Lounge Link. All rights reserved.</p>
       </div>
     </body>
     </html>
@@ -332,17 +460,18 @@ export async function generateOwnerProfilePDF(
       useCORS: true,
       allowTaint: true,
       logging: false,
-      scale: 2,
+      scale: 3,
       backgroundColor: '#ffffff',
       windowHeight: container.scrollHeight,
-      windowWidth: 800
+      windowWidth: 800,
+      imageTimeout: 30000,
     });
 
     if (!canvas) {
       throw new Error('Failed to render canvas');
     }
 
-    const imgData = canvas.toDataURL('image/png');
+    const imgData = canvas.toDataURL('image/jpeg', 0.98);
     const pdf = new jsPDF('p', 'mm', 'a4');
 
     const imgWidth = 190; // A4 width minus margins
@@ -350,14 +479,14 @@ export async function generateOwnerProfilePDF(
     let position = 10;
 
     // First page
-    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+    pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
 
     // Additional pages if needed
     let heightLeft = imgHeight - (297 - 20); // A4 height minus margins
     while (heightLeft > 0) {
       position = heightLeft - imgHeight + 10;
       pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+      pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
       heightLeft -= 277; // A4 height minus margins
     }
 

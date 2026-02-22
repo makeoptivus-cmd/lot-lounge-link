@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import FormPageHeader from "@/components/FormPageHeader";
-import DataTable from "@/components/DataTable";
+
 import SectionMediaUpload from "@/components/SectionMediaUpload";
 import { storage, OwnerMeetingData } from "@/lib/storage";
 
@@ -115,18 +115,6 @@ export default function OwnerMeetingForm() {
           </form>
         </CardContent>
       </Card>
-
-      <DataTable
-        title="Saved Meetings"
-        columns={[
-          { key: "meetingDate", label: "Date" },
-          { key: "landRate", label: "Rate (₹)" },
-          { key: "finalPrice", label: "Final Price (₹)" },
-          { key: "negotiationDetails", label: "Details" },
-        ]}
-        data={data}
-        onDelete={handleDelete}
-      />
     </Layout>
   );
 }

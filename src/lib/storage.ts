@@ -27,7 +27,8 @@ export interface LandDetailsData {
   areaName: string;
   fmSketch: string;
   siteSketch: string;
-  natureOfLand: string;
+  natureOfLand: string[];
+  acres: string;
   ratePerCent: string;
   ratePerSqFt: string;
   photos: string[];
@@ -75,6 +76,7 @@ export interface BuyerSellerMeetingData {
   ownerId: string;
   buyerName: string;
   buyerContact: string;
+  buyerAddress: string;
   meetingDate: string;
   meetingNotes: string;
   photos: string[];
