@@ -22,6 +22,7 @@ export default function HighlightableText({
     const [selectionEnd, setSelectionEnd] = useState(0);
     const [showColorMenu, setShowColorMenu] = useState(false);
     const textRef = useRef<HTMLDivElement>(null);
+    const selectionRef = useRef({ start: 0, end: 0, text: "" });
 
     const colors: Array<{
         name: string;
@@ -51,6 +52,7 @@ export default function HighlightableText({
             setSelectedText(selection.toString());
             setSelectionStart(start);
             setSelectionEnd(end);
+            selectionRef.current = { start, end, text: selection.toString() };
             setShowColorMenu(true);
         }
     };
@@ -66,7 +68,9 @@ export default function HighlightableText({
         const handleSelectionChange = () => {
             const selection = window.getSelection();
             if (!selection || selection.toString().length === 0) {
-                setShowColorMenu(false);
+                if (!selectionRef.current.text) {
+                    setShowColorMenu(false);
+                }
                 return;
             }
             if (!textRef.current || !selection.anchorNode || !textRef.current.contains(selection.anchorNode)) {
@@ -82,19 +86,21 @@ export default function HighlightableText({
     }, []);
 
     const applyHighlight = (color: "yellow" | "orange" | "red" | "blue" | "green") => {
-        if (selectionStart !== selectionEnd) {
+        const { start, end } = selectionRef.current;
+        if (start !== end) {
             const newHighlight: TextHighlight = {
-                start: selectionStart,
-                end: selectionEnd,
+                start,
+                end,
                 color,
             };
             const updatedHighlights = [
-                ...highlights.filter((h) => !(h.start === selectionStart && h.end === selectionEnd)),
+                ...highlights.filter((h) => !(h.start === start && h.end === end)),
                 newHighlight,
             ];
             onHighlightsChange?.(updatedHighlights);
             setShowColorMenu(false);
             window.getSelection()?.removeAllRanges();
+            selectionRef.current = { start: 0, end: 0, text: "" };
         }
     };
 
@@ -195,6 +201,7 @@ export default function HighlightableText({
                         onClick={() => {
                             setShowColorMenu(false);
                             window.getSelection()?.removeAllRanges();
+                            selectionRef.current = { start: 0, end: 0, text: "" };
                         }}
                         className="h-6 text-xs"
                     >
