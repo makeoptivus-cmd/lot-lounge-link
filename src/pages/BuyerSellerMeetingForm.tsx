@@ -11,6 +11,7 @@ import FormPageHeader from "@/components/FormPageHeader";
 
 import SectionMediaUpload from "@/components/SectionMediaUpload";
 import { storage, BuyerSellerMeetingData } from "@/lib/storage";
+import { MediaValue } from "@/lib/mediaTypes";
 
 export default function BuyerSellerMeetingForm() {
   const [data, setData] = useState<BuyerSellerMeetingData[]>(storage.getBuyerSellerMeetings());
@@ -20,11 +21,13 @@ export default function BuyerSellerMeetingForm() {
     buyerName: "",
     buyerContact: "",
     buyerAddress: "",
+    sellerContact: "",
     meetingDate: "",
     meetingNotes: "",
   });
-  const [photos, setPhotos] = useState<string[]>([]);
-  const [videos, setVideos] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<MediaValue[]>([]);
+  const [videos, setVideos] = useState<MediaValue[]>([]);
+  const [documents, setDocuments] = useState<MediaValue[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,14 +36,16 @@ export default function BuyerSellerMeetingForm() {
         ...form,
         photos,
         videos,
+        documents,
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
       };
       storage.addBuyerSellerMeeting(item);
       setData(storage.getBuyerSellerMeetings());
-      setForm({ ownerId: "", buyerName: "", buyerContact: "", buyerAddress: "", meetingDate: "", meetingNotes: "" });
+      setForm({ ownerId: "", buyerName: "", buyerContact: "", buyerAddress: "", sellerContact: "", meetingDate: "", meetingNotes: "" });
       setPhotos([]);
       setVideos([]);
+      setDocuments([]);
       toast.success("Buyer-seller meeting details saved!");
     } catch (error) {
       console.error('Save error:', error);
@@ -93,6 +98,10 @@ export default function BuyerSellerMeetingForm() {
               <Label htmlFor="bcontact">Buyer Contact</Label>
               <Input id="bcontact" type="tel" placeholder="Buyer's phone" value={form.buyerContact} onChange={e => setForm(f => ({ ...f, buyerContact: e.target.value }))} required />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="scontact">Seller Contact</Label>
+              <Input id="scontact" type="tel" placeholder="Seller's phone" value={form.sellerContact} onChange={e => setForm(f => ({ ...f, sellerContact: e.target.value }))} required />
+            </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="baddress">Buyer Address</Label>
               <Input id="baddress" placeholder="Buyer's address" value={form.buyerAddress} onChange={e => setForm(f => ({ ...f, buyerAddress: e.target.value }))} />
@@ -109,9 +118,12 @@ export default function BuyerSellerMeetingForm() {
               <SectionMediaUpload
                 photos={photos}
                 videos={videos}
+                documents={documents}
                 onPhotosChange={setPhotos}
                 onVideosChange={setVideos}
+                onDocumentsChange={setDocuments}
                 label="Attach Meeting Photos & Videos"
+                ownerId={form.ownerId}
               />
             </div>
             <div className="sm:col-span-2">

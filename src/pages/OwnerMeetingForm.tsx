@@ -11,6 +11,7 @@ import FormPageHeader from "@/components/FormPageHeader";
 
 import SectionMediaUpload from "@/components/SectionMediaUpload";
 import { storage, OwnerMeetingData } from "@/lib/storage";
+import { MediaValue } from "@/lib/mediaTypes";
 
 export default function OwnerMeetingForm() {
   const [data, setData] = useState<OwnerMeetingData[]>(storage.getOwnerMeetings());
@@ -22,8 +23,9 @@ export default function OwnerMeetingForm() {
     finalPrice: "",
     meetingDate: "",
   });
-  const [photos, setPhotos] = useState<string[]>([]);
-  const [videos, setVideos] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<MediaValue[]>([]);
+  const [videos, setVideos] = useState<MediaValue[]>([]);
+  const [documents, setDocuments] = useState<MediaValue[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +34,7 @@ export default function OwnerMeetingForm() {
         ...form,
         photos,
         videos,
+        documents,
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
       };
@@ -40,6 +43,7 @@ export default function OwnerMeetingForm() {
       setForm({ ownerId: "", landRate: "", negotiationDetails: "", finalPrice: "", meetingDate: "" });
       setPhotos([]);
       setVideos([]);
+      setDocuments([]);
       toast.success("Owner meeting details saved!");
     } catch (error) {
       console.error('Save error:', error);
@@ -90,11 +94,11 @@ export default function OwnerMeetingForm() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="rate">Land Rate (₹)</Label>
-              <Input id="rate" type="number" placeholder="Owner's asking rate" value={form.landRate} onChange={e => setForm(f => ({ ...f, landRate: e.target.value }))} required />
+              <Input id="rate" type="text" placeholder="Owner's asking rate" value={form.landRate} onChange={e => setForm(f => ({ ...f, landRate: e.target.value }))} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="final">Final Negotiated Price (₹)</Label>
-              <Input id="final" type="number" placeholder="Agreed final price" value={form.finalPrice} onChange={e => setForm(f => ({ ...f, finalPrice: e.target.value }))} />
+              <Input id="final" type="text" placeholder="Agreed final price" value={form.finalPrice} onChange={e => setForm(f => ({ ...f, finalPrice: e.target.value }))} />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="neg">Negotiation Details</Label>
@@ -104,9 +108,12 @@ export default function OwnerMeetingForm() {
               <SectionMediaUpload
                 photos={photos}
                 videos={videos}
+                documents={documents}
                 onPhotosChange={setPhotos}
                 onVideosChange={setVideos}
+                onDocumentsChange={setDocuments}
                 label="Attach Meeting Photos & Videos"
+                ownerId={form.ownerId}
               />
             </div>
             <div className="sm:col-span-2">

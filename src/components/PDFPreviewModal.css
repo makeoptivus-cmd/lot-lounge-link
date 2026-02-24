@@ -1,0 +1,18 @@
+.pdf-preview-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.pdf-preview-content {
+    width: 8.5in;
+    min-height: 11in;
+    background-color: white;
+    font-size: 14px;
+    border-radius: 0.375rem;
+    transform: scale(var(--zoom-scale, 1));
+    transform-origin: top center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    will-change: transform;
+    transition: transform 0.2s ease-out;
+}

@@ -11,6 +11,7 @@ import FormPageHeader from "@/components/FormPageHeader";
 
 import SectionMediaUpload from "@/components/SectionMediaUpload";
 import { storage, MediationData } from "@/lib/storage";
+import { MediaValue } from "@/lib/mediaTypes";
 
 export default function MediationForm() {
   const [data, setData] = useState<MediationData[]>(storage.getMediations());
@@ -22,8 +23,9 @@ export default function MediationForm() {
     mediationDetails: "",
     outcome: "",
   });
-  const [photos, setPhotos] = useState<string[]>([]);
-  const [videos, setVideos] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<MediaValue[]>([]);
+  const [videos, setVideos] = useState<MediaValue[]>([]);
+  const [documents, setDocuments] = useState<MediaValue[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +34,7 @@ export default function MediationForm() {
         ...form,
         photos,
         videos,
+        documents,
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
       };
@@ -40,6 +43,7 @@ export default function MediationForm() {
       setForm({ ownerId: "", mediatorName: "", mediationDate: "", mediationDetails: "", outcome: "" });
       setPhotos([]);
       setVideos([]);
+      setDocuments([]);
       toast.success("Mediation details saved!");
     } catch (error) {
       console.error('Save error:', error);
@@ -104,9 +108,12 @@ export default function MediationForm() {
               <SectionMediaUpload
                 photos={photos}
                 videos={videos}
+                documents={documents}
                 onPhotosChange={setPhotos}
                 onVideosChange={setVideos}
+                onDocumentsChange={setDocuments}
                 label="Attach Mediation Photos & Videos"
+                ownerId={form.ownerId}
               />
             </div>
             <div className="sm:col-span-2">

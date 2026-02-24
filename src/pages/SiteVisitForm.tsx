@@ -11,6 +11,7 @@ import FormPageHeader from "@/components/FormPageHeader";
 
 import SectionMediaUpload from "@/components/SectionMediaUpload";
 import { storage, SiteVisitData } from "@/lib/storage";
+import { MediaValue } from "@/lib/mediaTypes";
 
 export default function SiteVisitForm() {
   const [data, setData] = useState<SiteVisitData[]>(storage.getSiteVisits());
@@ -21,8 +22,9 @@ export default function SiteVisitForm() {
     visitDate: "",
     notes: "",
   });
-  const [photos, setPhotos] = useState<string[]>([]);
-  const [videos, setVideos] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<MediaValue[]>([]);
+  const [videos, setVideos] = useState<MediaValue[]>([]);
+  const [documents, setDocuments] = useState<MediaValue[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +33,7 @@ export default function SiteVisitForm() {
         ...form,
         photos,
         videos,
+        documents,
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
       };
@@ -39,6 +42,7 @@ export default function SiteVisitForm() {
       setForm({ ownerId: "", distanceKm: "", visitDate: "", notes: "" });
       setPhotos([]);
       setVideos([]);
+      setDocuments([]);
       toast.success("Site visit details saved!");
     } catch (error) {
       console.error('Save error:', error);
@@ -85,7 +89,7 @@ export default function SiteVisitForm() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="km">Distance (KM)</Label>
-              <Input id="km" type="number" placeholder="How many kilometres" value={form.distanceKm} onChange={e => setForm(f => ({ ...f, distanceKm: e.target.value }))} required />
+              <Input id="km" type="text" placeholder="How many kilometres" value={form.distanceKm} onChange={e => setForm(f => ({ ...f, distanceKm: e.target.value }))} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="date">Visit Date</Label>
@@ -101,9 +105,12 @@ export default function SiteVisitForm() {
               <SectionMediaUpload
                 photos={photos}
                 videos={videos}
+                documents={documents}
                 onPhotosChange={setPhotos}
                 onVideosChange={setVideos}
+                onDocumentsChange={setDocuments}
                 label="Site Photos & Videos"
+                ownerId={form.ownerId}
               />
             </div>
 

@@ -7,7 +7,7 @@ const DB_VERSION = 1;
 interface MediaFile {
   id: string;
   ownerId: string;
-  type: 'photo' | 'video';
+  type: 'photo' | 'video' | 'document';
   data: Blob;
   fileName: string;
   fileSize: number;
@@ -92,7 +92,7 @@ async function deleteMediaFile(id: string): Promise<void> {
 async function deleteMediaFilesByOwnerId(ownerId: string): Promise<void> {
   const db = await initDB();
   const files = await getMediaFilesByOwnerId(ownerId);
-  
+
   for (const file of files) {
     await deleteMediaFile(file.id);
   }

@@ -1,10 +1,12 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, X, Play, Image as ImageIcon, Trash2, HardDrive } from "lucide-react";
+import { Upload, Play, Image as ImageIcon, Trash2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { storage, MediaData } from "@/lib/storage";
+import { indexedDBStorage } from "@/lib/indexedDBStorage";
+import { MAX_UPLOAD_BYTES } from "@/lib/mediaTypes";
 
 interface MediaUploadProps {
   ownerId: string;
@@ -15,7 +17,85 @@ export default function MediaUpload({ ownerId, onMediaAdded }: MediaUploadProps)
   const [media, setMedia] = useState<MediaData[]>(storage.getMediaByOwnerId(ownerId));
   const [uploading, setUploading] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<Set<string>>(new Set());
+  const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewUrlMapRef = useRef(new Map<string, string>());
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadPreviews = async () => {
+      for (const item of media) {
+        if (item.type === "photo" || item.type === "video") {
+          if (previewUrlMapRef.current.has(item.id)) {
+            continue;
+          }
+
+          try {
+            const stored = await indexedDBStorage.getMediaFile(item.id);
+            if (stored && isActive) {
+              const url = URL.createObjectURL(stored.data);
+              previewUrlMapRef.current.set(item.id, url);
+              setPreviewUrls(prev => ({ ...prev, [item.id]: url }));
+              continue;
+            }
+
+            const legacyData = (item as { data?: string }).data;
+            if (legacyData && isActive) {
+              previewUrlMapRef.current.set(item.id, legacyData);
+              setPreviewUrls(prev => ({ ...prev, [item.id]: legacyData }));
+            }
+          } catch (error) {
+            console.error("Failed to load media preview:", error);
+          }
+        }
+      }
+    };
+
+    loadPreviews();
+
+    return () => {
+      isActive = false;
+    };
+  }, [media]);
+
+  useEffect(() => {
+    return () => {
+      previewUrlMapRef.current.forEach(url => {
+        if (url.startsWith("blob:")) {
+          URL.revokeObjectURL(url);
+        }
+      });
+      previewUrlMapRef.current.clear();
+    };
+  }, []);
+
+  const getFileKind = (file: File) => {
+    if (file.type.startsWith("image/")) return "photo" as const;
+    if (file.type.startsWith("video/")) return "video" as const;
+
+    const docMimeTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "text/plain",
+      "application/rtf",
+    ];
+    const docExtensions = [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".txt", ".rtf"];
+    const hasDocExtension = docExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+
+    if (docMimeTypes.includes(file.type) || hasDocExtension) return "document" as const;
+    return null;
+  };
+
+  const formatBytes = (bytes: number) => {
+    if (!bytes) return "0 B";
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
+  };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.currentTarget.files;
@@ -25,75 +105,69 @@ export default function MediaUpload({ ownerId, onMediaAdded }: MediaUploadProps)
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const isVideo = file.type.startsWith("video/");
-        const isImage = file.type.startsWith("image/");
+        const kind = getFileKind(file);
 
-        if (!isVideo && !isImage) {
-          toast.error(`${file.name} is not a valid image or video`);
+        if (!kind) {
+          toast.error(`${file.name} is not a supported file`);
           continue;
         }
 
-        // Check file size (max 150MB)
-        if (file.size > 150 * 1024 * 1024) {
-          toast.error(`${file.name} is too large (max 150MB)`);
+        if (file.size > MAX_UPLOAD_BYTES) {
+          toast.error(`${file.name} is too large (max 1GB)`);
           continue;
         }
 
+        let mediaId = "";
         try {
           toast.loading(`Uploading ${file.name}...`);
-          const reader = new FileReader();
+          mediaId = crypto.randomUUID();
+          const uploadedAt = new Date().toISOString();
 
-          reader.onload = (e) => {
-            const dataUrl = e.target?.result as string;
+          await indexedDBStorage.addMediaFile({
+            id: mediaId,
+            ownerId,
+            type: kind,
+            data: file,
+            fileName: file.name,
+            fileSize: file.size,
+            uploadedAt,
+            mimeType: file.type || "application/octet-stream",
+          });
 
-            if (isImage) {
-              const mediaData: MediaData = {
-                id: crypto.randomUUID(),
-                ownerId,
-                type: "photo",
-                data: dataUrl,
-                fileName: file.name,
-                uploadedAt: new Date().toISOString(),
-              };
-              try {
-                storage.addMedia(mediaData);
-                setMedia(storage.getMediaByOwnerId(ownerId));
-                onMediaAdded?.();
-                toast.dismiss();
-                toast.success(`Photo uploaded: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
-              } catch (error) {
-                toast.dismiss();
-                toast.error(`Failed to save ${file.name}. Try deleting old media or refresh the page.`);
-              }
-            } else {
-              const mediaData: MediaData = {
-                id: crypto.randomUUID(),
-                ownerId,
-                type: "video",
-                data: dataUrl,
-                fileName: file.name,
-                uploadedAt: new Date().toISOString(),
-              };
-              try {
-                storage.addMedia(mediaData);
-                setMedia(storage.getMediaByOwnerId(ownerId));
-                onMediaAdded?.();
-                toast.dismiss();
-                toast.success(`Video uploaded: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
-              } catch (error) {
-                toast.dismiss();
-                toast.error(`Failed to save ${file.name}. Try deleting old media or refresh the page.`);
-              }
-            }
+          const mediaData: MediaData = {
+            id: mediaId,
+            ownerId,
+            type: kind,
+            fileName: file.name,
+            fileSize: file.size,
+            uploadedAt,
+            mimeType: file.type || "application/octet-stream",
           };
 
-          reader.onerror = () => {
-            toast.dismiss();
-            toast.error(`Failed to read ${file.name}`);
-          };
+          storage.addMedia(mediaData);
+          setMedia(storage.getMediaByOwnerId(ownerId));
+          onMediaAdded?.();
 
-          reader.readAsDataURL(file);
+          if (kind === "photo" || kind === "video") {
+            const previewUrl = URL.createObjectURL(file);
+            previewUrlMapRef.current.set(mediaId, previewUrl);
+            setPreviewUrls(prev => ({ ...prev, [mediaId]: previewUrl }));
+          }
+
+          toast.dismiss();
+          toast.success(`${kind === "photo" ? "Photo" : kind === "video" ? "Video" : "Document"} uploaded: ${formatBytes(file.size)}`);
         } catch (error) {
+          if (mediaId) {
+            await indexedDBStorage.deleteMediaFile(mediaId);
+            const previewUrl = previewUrlMapRef.current.get(mediaId);
+            if (previewUrl) {
+              if (previewUrl.startsWith("blob:")) {
+                URL.revokeObjectURL(previewUrl);
+              }
+              previewUrlMapRef.current.delete(mediaId);
+            }
+          }
+          toast.dismiss();
           toast.error(`Failed to process ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
           console.error('File processing error:', error);
         }
@@ -106,7 +180,8 @@ export default function MediaUpload({ ownerId, onMediaAdded }: MediaUploadProps)
     }
   };
 
-  const handleDelete = (mediaId: string) => {
+  const handleDelete = async (mediaId: string) => {
+    await indexedDBStorage.deleteMediaFile(mediaId);
     storage.deleteMedia(mediaId);
     setMedia(storage.getMediaByOwnerId(ownerId));
     setSelectedMedia(prev => {
@@ -114,6 +189,18 @@ export default function MediaUpload({ ownerId, onMediaAdded }: MediaUploadProps)
       newSet.delete(mediaId);
       return newSet;
     });
+    const previewUrl = previewUrlMapRef.current.get(mediaId);
+    if (previewUrl) {
+      if (previewUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      previewUrlMapRef.current.delete(mediaId);
+      setPreviewUrls(prev => {
+        const next = { ...prev };
+        delete next[mediaId];
+        return next;
+      });
+    }
     toast.success("Media deleted");
   };
 
@@ -129,13 +216,39 @@ export default function MediaUpload({ ownerId, onMediaAdded }: MediaUploadProps)
     });
   };
 
-  const deleteSelectedMedia = () => {
-    selectedMedia.forEach(mediaId => {
+  const deleteSelectedMedia = async () => {
+    for (const mediaId of selectedMedia) {
+      await indexedDBStorage.deleteMediaFile(mediaId);
       storage.deleteMedia(mediaId);
-    });
+      const previewUrl = previewUrlMapRef.current.get(mediaId);
+      if (previewUrl) {
+        if (previewUrl.startsWith("blob:")) {
+          URL.revokeObjectURL(previewUrl);
+        }
+        previewUrlMapRef.current.delete(mediaId);
+      }
+    }
     setMedia(storage.getMediaByOwnerId(ownerId));
     setSelectedMedia(new Set());
     toast.success(`Deleted ${selectedMedia.size} item(s)`);
+  };
+
+  const handleOpenDocument = async (mediaId: string, fileName: string) => {
+    try {
+      const stored = await indexedDBStorage.getMediaFile(mediaId);
+      if (!stored) {
+        toast.error("Document not found");
+        return;
+      }
+      const url = URL.createObjectURL(stored.data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error("Failed to open document");
+    }
   };
 
   return (
@@ -151,10 +264,10 @@ export default function MediaUpload({ ownerId, onMediaAdded }: MediaUploadProps)
                   id="media-input"
                   type="file"
                   multiple
-                  accept="image/*,video/*"
+                  accept="image/*,video/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,application/rtf"
                   onChange={handleFileSelect}
                   className="hidden"
-                  title="Select photos and videos to upload"
+                  title="Select files to upload"
                 />
                 <Button
                   onClick={() => fileInputRef.current?.click()}
@@ -166,7 +279,7 @@ export default function MediaUpload({ ownerId, onMediaAdded }: MediaUploadProps)
                   {uploading ? "Uploading..." : "Select Files"}
                 </Button>
                 <span className="text-xs text-muted-foreground">
-                  JPG, PNG, MP4, MOV, WebM (max 150MB each, no compression)
+                  JPG, PNG, MP4, MOV, WebM, PDF, DOC, DOCX (max 1GB each, stored locally)
                 </span>
               </div>
             </div>
@@ -182,26 +295,48 @@ export default function MediaUpload({ ownerId, onMediaAdded }: MediaUploadProps)
             <div className="space-y-4">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {media.map((item) => (
-                  <div 
+                  <div
                     key={item.id}
-                    className={`relative cursor-pointer transition-all ${
-                      selectedMedia.has(item.id) ? 'ring-2 ring-blue-500 rounded-lg' : ''
-                    }`}
+                    className={`relative cursor-pointer transition-all ${selectedMedia.has(item.id) ? 'ring-2 ring-blue-500 rounded-lg' : ''
+                      }`}
                     onClick={() => toggleMediaSelection(item.id)}
                   >
                     {item.type === "photo" ? (
-                      <img
-                        src={item.data}
-                        alt={item.fileName}
-                        className="w-full h-32 object-cover rounded-lg border"
-                      />
-                    ) : (
-                      <div className="relative w-full h-32 bg-black rounded-lg border flex items-center justify-center">
-                        <video
-                          src={item.data}
-                          className="w-full h-full object-cover rounded-lg"
+                      previewUrls[item.id] ? (
+                        <img
+                          src={previewUrls[item.id]}
+                          alt={item.fileName}
+                          className="w-full h-32 object-cover rounded-lg border"
                         />
+                      ) : (
+                        <div className="w-full h-32 rounded-lg border bg-muted/40" />
+                      )
+                    ) : item.type === "video" ? (
+                      <div className="relative w-full h-32 bg-black rounded-lg border flex items-center justify-center">
+                        {previewUrls[item.id] && (
+                          <video
+                            src={previewUrls[item.id]}
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        )}
                         <Play className="absolute h-8 w-8 text-white pointer-events-none" />
+                      </div>
+                    ) : (
+                      <div className="relative w-full h-32 bg-muted/40 rounded-lg border flex flex-col items-center justify-center gap-2 p-3 text-center">
+                        <FileText className="h-8 w-8 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {item.fileName}
+                        </p>
+                        <button
+                          type="button"
+                          className="text-xs text-blue-600 hover:underline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDocument(item.id, item.fileName);
+                          }}
+                        >
+                          Download
+                        </button>
                       </div>
                     )}
 
@@ -222,9 +357,13 @@ export default function MediaUpload({ ownerId, onMediaAdded }: MediaUploadProps)
                         <>
                           <ImageIcon className="h-3 w-3" /> Photo
                         </>
-                      ) : (
+                      ) : item.type === "video" ? (
                         <>
                           <Play className="h-3 w-3" /> Video
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="h-3 w-3" /> Doc
                         </>
                       )}
                     </div>

@@ -62,7 +62,7 @@ export default function LandOwnerForm() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="age">Age</Label>
-              <Input id="age" type="number" placeholder="Owner age" value={form.age} onChange={e => setForm(f => ({ ...f, age: e.target.value }))} required />
+              <Input id="age" type="text" placeholder="Owner age" value={form.age} onChange={e => setForm(f => ({ ...f, age: e.target.value }))} required />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="address">Address</Label>
@@ -87,8 +87,8 @@ export default function LandOwnerForm() {
       {selectedOwnerId && (
         <div className="mt-8">
           <h2 className="text-xl font-semibold mb-4">Add Photos & Videos for {data.find(o => o.id === selectedOwnerId)?.areaName}</h2>
-          <MediaUpload 
-            ownerId={selectedOwnerId} 
+          <MediaUpload
+            ownerId={selectedOwnerId}
             onMediaAdded={() => setData(storage.getLandOwners())}
           />
         </div>

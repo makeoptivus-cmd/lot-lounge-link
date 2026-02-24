@@ -11,6 +11,7 @@ import FormPageHeader from "@/components/FormPageHeader";
 
 import SectionMediaUpload from "@/components/SectionMediaUpload";
 import { storage, AdvanceRegistrationData } from "@/lib/storage";
+import { MediaValue } from "@/lib/mediaTypes";
 
 export default function AdvanceRegistrationForm() {
   const [data, setData] = useState<AdvanceRegistrationData[]>(storage.getAdvanceRegistrations());
@@ -18,29 +19,44 @@ export default function AdvanceRegistrationForm() {
   const [form, setForm] = useState({
     ownerId: "",
     advanceAmount: "",
+    registrationAmount: "",
+    secondAmount: "",
+    finalAmount: "",
+    totalAmount: "",
     advanceDate: "",
     registrationDate: "",
     buyerName: "",
     notes: "",
   });
-  const [photos, setPhotos] = useState<string[]>([]);
-  const [videos, setVideos] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<MediaValue[]>([]);
+  const [videos, setVideos] = useState<MediaValue[]>([]);
+  const [documents, setDocuments] = useState<MediaValue[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Calculate total amount
+      const advance = parseFloat(form.advanceAmount) || 0;
+      const registration = parseFloat(form.registrationAmount) || 0;
+      const second = parseFloat(form.secondAmount) || 0;
+      const final = parseFloat(form.finalAmount) || 0;
+      const total = advance + registration + second + final;
+
       const item: AdvanceRegistrationData = {
         ...form,
+        totalAmount: total.toString(),
         photos,
         videos,
+        documents,
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
       };
       storage.addAdvanceRegistration(item);
       setData(storage.getAdvanceRegistrations());
-      setForm({ ownerId: "", advanceAmount: "", advanceDate: "", registrationDate: "", buyerName: "", notes: "" });
+      setForm({ ownerId: "", advanceAmount: "", registrationAmount: "", secondAmount: "", finalAmount: "", totalAmount: "", advanceDate: "", registrationDate: "", buyerName: "", notes: "" });
       setPhotos([]);
       setVideos([]);
+      setDocuments([]);
       toast.success("Advance registration details saved!");
     } catch (error) {
       console.error('Save error:', error);
@@ -90,8 +106,31 @@ export default function AdvanceRegistrationForm() {
               <Input id="buyer" placeholder="Buyer's name" value={form.buyerName} onChange={e => setForm(f => ({ ...f, buyerName: e.target.value }))} required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="amount">Advance Amount (₹)</Label>
-              <Input id="amount" type="number" placeholder="Advance amount" value={form.advanceAmount} onChange={e => setForm(f => ({ ...f, advanceAmount: e.target.value }))} required />
+              <Label htmlFor="advAmount">Advance Amount (₹)</Label>
+              <Input id="advAmount" type="text" placeholder="Advance amount" value={form.advanceAmount} onChange={e => setForm(f => ({ ...f, advanceAmount: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="regAmount">Registration Amount (₹)</Label>
+              <Input id="regAmount" type="text" placeholder="Registration amount" value={form.registrationAmount} onChange={e => setForm(f => ({ ...f, registrationAmount: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="secondAmount">Second Amount (₹)</Label>
+              <Input id="secondAmount" type="text" placeholder="Second amount" value={form.secondAmount} onChange={e => setForm(f => ({ ...f, secondAmount: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="finalAmount">Final Amount (₹)</Label>
+              <Input id="finalAmount" type="text" placeholder="Final amount" value={form.finalAmount} onChange={e => setForm(f => ({ ...f, finalAmount: e.target.value }))} />
+            </div>
+            <div className="space-y-2 sm:col-span-2 bg-muted/30 p-3 rounded-lg border">
+              <p className="text-sm font-semibold">Total Amount (Auto-calculated)</p>
+              <p className="text-lg font-bold text-primary">
+                ₹ {(
+                  (parseFloat(form.advanceAmount) || 0) +
+                  (parseFloat(form.registrationAmount) || 0) +
+                  (parseFloat(form.secondAmount) || 0) +
+                  (parseFloat(form.finalAmount) || 0)
+                ).toFixed(2)}
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="adate">Advance Date</Label>
@@ -109,9 +148,12 @@ export default function AdvanceRegistrationForm() {
               <SectionMediaUpload
                 photos={photos}
                 videos={videos}
+                documents={documents}
                 onPhotosChange={setPhotos}
                 onVideosChange={setVideos}
+                onDocumentsChange={setDocuments}
                 label="Attach Registration Documents & Photos"
+                ownerId={form.ownerId}
               />
             </div>
             <div className="sm:col-span-2">
