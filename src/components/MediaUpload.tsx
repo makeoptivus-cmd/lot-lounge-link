@@ -258,7 +258,7 @@ export default function MediaUpload({ ownerId, onMediaAdded }: MediaUploadProps)
           <div className="space-y-4">
             <div>
               <Label htmlFor="media-input">Upload Photos & Videos</Label>
-              <div className="mt-2 flex items-center gap-3">
+              <div className="mt-2 flex flex-wrap items-start gap-3 sm:items-center">
                 <input
                   ref={fileInputRef}
                   id="media-input"
@@ -306,23 +306,23 @@ export default function MediaUpload({ ownerId, onMediaAdded }: MediaUploadProps)
                         <img
                           src={previewUrls[item.id]}
                           alt={item.fileName}
-                          className="w-full h-32 object-cover rounded-lg border"
+                          className="h-24 w-full object-cover rounded-lg border sm:h-32"
                         />
                       ) : (
-                        <div className="w-full h-32 rounded-lg border bg-muted/40" />
+                        <div className="h-24 w-full rounded-lg border bg-muted/40 sm:h-32" />
                       )
                     ) : item.type === "video" ? (
-                      <div className="relative w-full h-32 bg-black rounded-lg border flex items-center justify-center">
+                      <div className="relative h-24 w-full bg-black rounded-lg border flex items-center justify-center sm:h-32">
                         {previewUrls[item.id] && (
                           <video
                             src={previewUrls[item.id]}
-                            className="w-full h-full object-cover rounded-lg"
+                            className="h-full w-full object-cover rounded-lg"
                           />
                         )}
                         <Play className="absolute h-8 w-8 text-white pointer-events-none" />
                       </div>
                     ) : (
-                      <div className="relative w-full h-32 bg-muted/40 rounded-lg border flex flex-col items-center justify-center gap-2 p-3 text-center">
+                      <div className="relative h-24 w-full bg-muted/40 rounded-lg border flex flex-col items-center justify-center gap-2 p-3 text-center sm:h-32">
                         <FileText className="h-8 w-8 text-muted-foreground" />
                         <p className="text-xs text-muted-foreground line-clamp-2">
                           {item.fileName}

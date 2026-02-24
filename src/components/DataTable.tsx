@@ -25,15 +25,15 @@ export default function DataTable({ title, columns, data, onDelete }: DataTableP
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="min-w-[640px] w-full text-xs sm:text-sm">
             <thead>
               <tr className="border-b">
                 {columns.map(col => (
-                  <th key={col.key} className="px-3 py-2 text-left font-semibold text-muted-foreground">
+                  <th key={col.key} className="px-2 py-2 text-left font-semibold text-muted-foreground sm:px-3 whitespace-nowrap">
                     {col.label}
                   </th>
                 ))}
-                <th className="px-3 py-2 text-right font-semibold text-muted-foreground">Action</th>
+                <th className="px-2 py-2 text-right font-semibold text-muted-foreground sm:px-3 whitespace-nowrap">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -47,11 +47,11 @@ export default function DataTable({ title, columns, data, onDelete }: DataTableP
                     className="border-b last:border-0 hover:bg-muted/50"
                   >
                     {columns.map(col => (
-                      <td key={col.key} className="px-3 py-2.5 text-foreground">
+                      <td key={col.key} className="px-2 py-2.5 text-foreground sm:px-3">
                         {row[col.key] || "—"}
                       </td>
                     ))}
-                    <td className="px-3 py-2.5 text-right">
+                    <td className="px-2 py-2.5 text-right sm:px-3">
                       <Button
                         variant="ghost"
                         size="icon"

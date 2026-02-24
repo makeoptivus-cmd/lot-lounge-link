@@ -444,7 +444,7 @@ export default function SectionMediaUpload({
             <Label htmlFor="section-media-input" className="block mb-2">
               {label}
             </Label>
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex flex-wrap items-start gap-3 sm:items-center">
               <input
                 ref={fileInputRef}
                 id="section-media-input"
@@ -498,10 +498,10 @@ export default function SectionMediaUpload({
                       <img
                         src={resolvePreviewUrl(photo)}
                         alt={`Photo ${idx + 1}`}
-                        className="w-full h-32 object-cover rounded-lg border border-input"
+                        className="h-24 w-full object-cover rounded-lg border border-input sm:h-32"
                       />
                     ) : (
-                      <div className="w-full h-32 rounded-lg border border-input bg-muted/40" />
+                      <div className="h-24 w-full rounded-lg border border-input bg-muted/40 sm:h-32" />
                     )}
                     {/* Checkbox */}
                     <div className="absolute top-2 right-2 bg-white rounded-full p-1 border border-gray-300">
@@ -528,11 +528,11 @@ export default function SectionMediaUpload({
                       }`}
                     onClick={() => toggleVideoSelection(idx)}
                   >
-                    <div className="relative w-full h-32 bg-black rounded-lg border border-input flex items-center justify-center overflow-hidden">
+                    <div className="relative h-24 w-full bg-black rounded-lg border border-input flex items-center justify-center overflow-hidden sm:h-32">
                       {resolvePreviewUrl(video) && (
                         <video
                           src={resolvePreviewUrl(video)}
-                          className="w-full h-full object-cover"
+                          className="h-full w-full object-cover"
                         />
                       )}
                       <Play className="absolute h-8 w-8 text-white pointer-events-none" />
@@ -563,7 +563,7 @@ export default function SectionMediaUpload({
                     {documentsList.map((doc, idx) => (
                       <div
                         key={`doc-${idx}`}
-                        className={`flex items-center justify-between gap-3 rounded-lg border border-input p-3 ${selectedDocuments.has(idx) ? "ring-2 ring-blue-500" : ""
+                        className={`flex flex-col gap-2 rounded-lg border border-input p-3 sm:flex-row sm:items-center sm:justify-between ${selectedDocuments.has(idx) ? "ring-2 ring-blue-500" : ""
                           }`}
                         onClick={() => toggleDocumentSelection(idx)}
                       >
@@ -578,7 +578,7 @@ export default function SectionMediaUpload({
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <button
                             type="button"
                             className="text-xs text-blue-600 hover:underline"

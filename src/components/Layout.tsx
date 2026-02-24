@@ -72,7 +72,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <div className="flex">
+      <div className="flex min-w-0">
         {/* Sidebar - Desktop */}
         <aside className="hidden w-64 shrink-0 border-r bg-card md:block">
           <nav className="sticky top-16 space-y-1 p-4">
@@ -152,8 +152,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto">
-          <div className="mx-auto max-w-4xl p-4 md:p-8">
+        <main className="min-w-0 flex-1 overflow-auto">
+          <div className="mx-auto w-full max-w-4xl p-4 md:p-8">
             {children}
           </div>
         </main>
