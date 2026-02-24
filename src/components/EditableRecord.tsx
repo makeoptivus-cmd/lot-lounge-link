@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import EditableDetailRow from "./EditableDetailRow";
 import { cn } from "@/lib/utils";
+import { TextHighlight } from "@/lib/storage";
 
 interface FieldDef {
     key: string;
@@ -44,8 +45,18 @@ export default function EditableRecord({
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [highlightMenu, setHighlightMenu] = useState(false);
 
-    const handleFieldSave = (fieldKey: string, newValue: string | any[]) => {
-        onUpdate({ [fieldKey]: newValue });
+    const handleFieldSave = (fieldKey: string, newValue: string | any[], highlights?: TextHighlight[]) => {
+        const updates: Record<string, any> = { [fieldKey]: newValue };
+
+        if (highlights) {
+            const nextFieldHighlights = {
+                ...(data.fieldHighlights || {}),
+                [fieldKey]: highlights,
+            };
+            updates.fieldHighlights = nextFieldHighlights;
+        }
+
+        onUpdate(updates);
     };
 
     const recordHighlight = highlights[data.id] || "";
@@ -169,9 +180,10 @@ export default function EditableRecord({
                                 key={field.key}
                                 label={field.label}
                                 value={data[field.key] || ""}
-                                onSave={(newValue) => handleFieldSave(field.key, newValue)}
+                                onSave={(newValue, highlights) => handleFieldSave(field.key, newValue, highlights)}
                                 highlight={highlights[`${data.id}_${field.key}`] || ""}
                                 isTextarea={field.type === "textarea"}
+                                textHighlights={data.fieldHighlights?.[field.key] || []}
                             />
                         ))}
                     </div>
