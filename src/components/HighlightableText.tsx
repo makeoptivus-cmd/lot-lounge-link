@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Highlighter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TextHighlight } from "@/lib/storage";
@@ -21,6 +21,7 @@ export default function HighlightableText({
     const [selectionStart, setSelectionStart] = useState(0);
     const [selectionEnd, setSelectionEnd] = useState(0);
     const [showColorMenu, setShowColorMenu] = useState(false);
+    const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
     const textRef = useRef<HTMLDivElement>(null);
 
     const colors: Array<{
@@ -38,6 +39,9 @@ export default function HighlightableText({
     const handleTextSelect = () => {
         const selection = window.getSelection();
         if (selection && selection.toString().length > 0) {
+            if (!textRef.current || !selection.anchorNode || !textRef.current.contains(selection.anchorNode)) {
+                return;
+            }
             const range = selection.getRangeAt(0);
             const preCaretRange = range.cloneRange();
             preCaretRange.selectNodeContents(textRef.current!);
@@ -45,9 +49,24 @@ export default function HighlightableText({
             const start = preCaretRange.toString().length - selection.toString().length;
             const end = start + selection.toString().length;
 
+            const selectionRect = range.getBoundingClientRect();
+            const containerRect = textRef.current!.getBoundingClientRect();
+            const menuWidth = 220;
+            const menuHeight = 48;
+            const rawLeft = selectionRect.left - containerRect.left;
+            const belowTop = selectionRect.bottom - containerRect.top + 8;
+            const aboveTop = selectionRect.top - containerRect.top - menuHeight - 8;
+            const shouldFlip = belowTop + menuHeight > containerRect.height && aboveTop >= 8;
+            const rawTop = shouldFlip ? aboveTop : belowTop;
+            const maxLeft = Math.max(containerRect.width - menuWidth - 8, 8);
+            const maxTop = Math.max(containerRect.height - menuHeight - 8, 8);
+            const left = Math.min(Math.max(rawLeft, 8), maxLeft);
+            const top = Math.min(Math.max(rawTop, 8), maxTop);
+
             setSelectedText(selection.toString());
             setSelectionStart(start);
             setSelectionEnd(end);
+            setMenuPosition({ top, left });
             setShowColorMenu(true);
         }
     };
@@ -58,6 +77,25 @@ export default function HighlightableText({
             handleTextSelect();
         }, 0);
     };
+
+    useEffect(() => {
+        const handleSelectionChange = () => {
+            const selection = window.getSelection();
+            if (!selection || selection.toString().length === 0) {
+                setShowColorMenu(false);
+                return;
+            }
+            if (!textRef.current || !selection.anchorNode || !textRef.current.contains(selection.anchorNode)) {
+                return;
+            }
+            handleTextSelect();
+        };
+
+        document.addEventListener("selectionchange", handleSelectionChange);
+        return () => {
+            document.removeEventListener("selectionchange", handleSelectionChange);
+        };
+    }, []);
 
     const applyHighlight = (color: "yellow" | "orange" | "red" | "blue" | "green") => {
         if (selectionStart !== selectionEnd) {
@@ -121,7 +159,7 @@ export default function HighlightableText({
     const segments = renderHighlightedText();
 
     return (
-        <div className="space-y-2">
+        <div className="space-y-2 relative">
             <div
                 ref={textRef}
                 onMouseUp={!readOnly ? handleTextSelect : undefined}
@@ -154,7 +192,10 @@ export default function HighlightableText({
             </div>
 
             {selectedText && showColorMenu && (
-                <div className="flex flex-wrap items-center gap-2 p-2 rounded border border-input bg-muted">
+                <div
+                    className="absolute z-10 flex flex-wrap items-center gap-2 rounded border border-input bg-muted p-2 shadow-sm"
+                    style={{ top: menuPosition.top, left: menuPosition.left }}
+                >
                     <Highlighter className="h-4 w-4 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">Highlight as:</span>
                     {colors.map((color) => (
