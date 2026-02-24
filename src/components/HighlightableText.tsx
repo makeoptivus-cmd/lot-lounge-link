@@ -52,6 +52,13 @@ export default function HighlightableText({
         }
     };
 
+    const handleTouchSelect = () => {
+        // Allow the OS selection UI to finish before reading selection.
+        setTimeout(() => {
+            handleTextSelect();
+        }, 0);
+    };
+
     const applyHighlight = (color: "yellow" | "orange" | "red" | "blue" | "green") => {
         if (selectionStart !== selectionEnd) {
             const newHighlight: TextHighlight = {
@@ -118,6 +125,7 @@ export default function HighlightableText({
             <div
                 ref={textRef}
                 onMouseUp={!readOnly ? handleTextSelect : undefined}
+                onTouchEnd={!readOnly ? handleTouchSelect : undefined}
                 className={cn(
                     "p-3 rounded border border-input bg-background text-sm leading-relaxed whitespace-pre-wrap break-words",
                     !readOnly && "cursor-text select-text"
@@ -146,7 +154,7 @@ export default function HighlightableText({
             </div>
 
             {selectedText && showColorMenu && (
-                <div className="flex items-center gap-2 p-2 rounded border border-input bg-muted">
+                <div className="flex flex-wrap items-center gap-2 p-2 rounded border border-input bg-muted">
                     <Highlighter className="h-4 w-4 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">Highlight as:</span>
                     {colors.map((color) => (
