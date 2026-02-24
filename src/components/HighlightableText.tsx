@@ -21,7 +21,6 @@ export default function HighlightableText({
     const [selectionStart, setSelectionStart] = useState(0);
     const [selectionEnd, setSelectionEnd] = useState(0);
     const [showColorMenu, setShowColorMenu] = useState(false);
-    const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
     const textRef = useRef<HTMLDivElement>(null);
 
     const colors: Array<{
@@ -49,24 +48,9 @@ export default function HighlightableText({
             const start = preCaretRange.toString().length - selection.toString().length;
             const end = start + selection.toString().length;
 
-            const selectionRect = range.getBoundingClientRect();
-            const containerRect = textRef.current!.getBoundingClientRect();
-            const menuWidth = 220;
-            const menuHeight = 48;
-            const rawLeft = selectionRect.left - containerRect.left;
-            const belowTop = selectionRect.bottom - containerRect.top + 8;
-            const aboveTop = selectionRect.top - containerRect.top - menuHeight - 8;
-            const shouldFlip = belowTop + menuHeight > containerRect.height && aboveTop >= 8;
-            const rawTop = shouldFlip ? aboveTop : belowTop;
-            const maxLeft = Math.max(containerRect.width - menuWidth - 8, 8);
-            const maxTop = Math.max(containerRect.height - menuHeight - 8, 8);
-            const left = Math.min(Math.max(rawLeft, 8), maxLeft);
-            const top = Math.min(Math.max(rawTop, 8), maxTop);
-
             setSelectedText(selection.toString());
             setSelectionStart(start);
             setSelectionEnd(end);
-            setMenuPosition({ top, left });
             setShowColorMenu(true);
         }
     };
@@ -159,7 +143,7 @@ export default function HighlightableText({
     const segments = renderHighlightedText();
 
     return (
-        <div className="space-y-2 relative">
+        <div className="space-y-2">
             <div
                 ref={textRef}
                 onMouseUp={!readOnly ? handleTextSelect : undefined}
@@ -192,10 +176,7 @@ export default function HighlightableText({
             </div>
 
             {selectedText && showColorMenu && (
-                <div
-                    className="absolute z-10 flex flex-wrap items-center gap-2 rounded border border-input bg-muted p-2 shadow-sm"
-                    style={{ top: menuPosition.top, left: menuPosition.left }}
-                >
+                <div className="sticky top-2 z-10 flex flex-wrap items-center gap-2 rounded border border-input bg-muted/95 p-2 backdrop-blur">
                     <Highlighter className="h-4 w-4 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">Highlight as:</span>
                     {colors.map((color) => (
